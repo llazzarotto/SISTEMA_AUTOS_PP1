@@ -426,3 +426,28 @@ FodyWeavers.xsd
 
 # Official VS Code C# Dev Kit Extension exclusion
 #*.lscache
+
+
+# Dependencias
+/node_modules/
+/vendor/
+
+# Archivos de entorno y secretos
+.env
+.env.local
+*.pem
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+
+# Directorios de editores e IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs y compilaciones
+*.log
+/dist/
+/build/
