@@ -1,0 +1,264 @@
+
+-- =====================================================
+-- SISTEMA DE COMPRA Y VENTA DE AUTOS
+-- Motor: MySQL 8.0.16+
+-- Backend: PHP
+-- =====================================================
+
+CREATE DATABASE IF NOT EXISTS concesionaria
+    CHARACTER SET utf8mb4
+    COLLATE utf8mb4_unicode_ci;
+
+USE concesionaria;
+
+-- =====================================================
+-- 1. ROLES
+-- =====================================================
+
+CREATE TABLE roles (
+    id_rol INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(30) NOT NULL UNIQUE
+);
+
+INSERT INTO roles (nombre)
+VALUES ('ADMIN'), ('CLIENTE');
+
+-- =====================================================
+-- 2. USUARIOS
+-- =====================================================
+
+CREATE TABLE usuarios (
+    id_usuario INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id_rol INT UNSIGNED NOT NULL DEFAULT 2,
+    nombre VARCHAR(100) NOT NULL,
+    apellido VARCHAR(100) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    telefono VARCHAR(25),
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
+    fecha_registro DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_usuarios_rol
+        FOREIGN KEY (id_rol)
+        REFERENCES roles(id_rol)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    INDEX idx_usuarios_rol (id_rol)
+);
+
+-- =====================================================
+-- 3. MARCAS
+-- =====================================================
+
+CREATE TABLE marcas (
+    id_marca INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(80) NOT NULL UNIQUE,
+    activa BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- =====================================================
+-- 4. MODELOS
+-- Cada modelo pertenece a una marca.
+-- =====================================================
+
+CREATE TABLE modelos (
+    id_modelo INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id_marca INT UNSIGNED NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+
+    CONSTRAINT fk_modelos_marca
+        FOREIGN KEY (id_marca)
+        REFERENCES marcas(id_marca)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT uq_modelo_marca
+        UNIQUE (id_marca, nombre)
+);
+
+-- =====================================================
+-- 5. AUTOS
+-- =====================================================
+
+CREATE TABLE autos (
+    id_auto INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id_modelo INT UNSIGNED NOT NULL,
+    titulo VARCHAR(150) NOT NULL,
+    anio SMALLINT UNSIGNED NOT NULL,
+    precio DECIMAL(14,2) NOT NULL,
+    kilometraje INT UNSIGNED NOT NULL DEFAULT 0,
+    combustible ENUM(
+        'NAFTA',
+        'DIESEL',
+        'GNC',
+        'HIBRIDO',
+        'ELECTRICO',
+        'OTRO'
+    ) NOT NULL DEFAULT 'NAFTA',
+    transmision ENUM(
+        'MANUAL',
+        'AUTOMATICA',
+        'OTRA'
+    ) NOT NULL DEFAULT 'MANUAL',
+    descripcion TEXT,
+    color VARCHAR(50),
+    ciudad VARCHAR(100),
+    estado ENUM(
+        'BORRADOR',
+        'PUBLICADO',
+        'RESERVADO',
+        'VENDIDO',
+        'INACTIVO'
+    ) NOT NULL DEFAULT 'BORRADOR',
+    fecha_publicacion DATETIME,
+    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_autos_modelo
+        FOREIGN KEY (id_modelo)
+        REFERENCES modelos(id_modelo)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT chk_autos_anio
+        CHECK (anio BETWEEN 1886 AND 2100),
+
+    CONSTRAINT chk_autos_precio
+        CHECK (precio > 0),
+
+    INDEX idx_autos_modelo (id_modelo),
+    INDEX idx_autos_precio (precio),
+    INDEX idx_autos_anio (anio),
+    INDEX idx_autos_kilometraje (kilometraje),
+    INDEX idx_autos_catalogo (estado, precio)
+);
+
+-- =====================================================
+-- 6. IMAGENES DE AUTOS
+-- Se guarda la ruta del archivo, no la imagen binaria.
+-- =====================================================
+
+CREATE TABLE imagenes_auto (
+    id_imagen INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id_auto INT UNSIGNED NOT NULL,
+    ruta VARCHAR(500) NOT NULL,
+    texto_alternativo VARCHAR(200),
+    es_principal BOOLEAN NOT NULL DEFAULT FALSE,
+    orden SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+
+    CONSTRAINT fk_imagenes_auto
+        FOREIGN KEY (id_auto)
+        REFERENCES autos(id_auto)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    INDEX idx_imagenes_auto (id_auto, orden)
+);
+
+-- =====================================================
+-- 7. FAVORITOS
+-- Un usuario no puede guardar dos veces el mismo auto.
+-- =====================================================
+
+CREATE TABLE favoritos (
+    id_usuario INT UNSIGNED NOT NULL,
+    id_auto INT UNSIGNED NOT NULL,
+    fecha_agregado DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id_usuario, id_auto),
+
+    CONSTRAINT fk_favoritos_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_favoritos_auto
+        FOREIGN KEY (id_auto)
+        REFERENCES autos(id_auto)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE,
+
+    INDEX idx_favoritos_auto (id_auto)
+);
+
+-- =====================================================
+-- 8. CONSULTAS Y CONTACTO
+-- id_usuario e id_auto pueden ser NULL para
+-- consultas generales o de visitantes no registrados.
+-- =====================================================
+
+CREATE TABLE consultas (
+    id_consulta INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT UNSIGNED NULL,
+    id_auto INT UNSIGNED NULL,
+    nombre_contacto VARCHAR(100) NOT NULL,
+    email_contacto VARCHAR(150) NOT NULL,
+    telefono_contacto VARCHAR(25),
+    asunto VARCHAR(150) NOT NULL,
+    mensaje TEXT NOT NULL,
+    estado ENUM(
+        'PENDIENTE',
+        'EN_PROCESO',
+        'RESPONDIDA',
+        'CERRADA'
+    ) NOT NULL DEFAULT 'PENDIENTE',
+    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_consultas_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_consultas_auto
+        FOREIGN KEY (id_auto)
+        REFERENCES autos(id_auto)
+        ON DELETE SET NULL
+        ON UPDATE CASCADE,
+
+    INDEX idx_consultas_estado_fecha (estado, fecha_creacion),
+    INDEX idx_consultas_usuario (id_usuario),
+    INDEX idx_consultas_auto (id_auto)
+);
+
+-- =====================================================
+-- 9. CITAS PARA VER AUTOS
+-- =====================================================
+
+CREATE TABLE citas (
+    id_cita INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    id_usuario INT UNSIGNED NOT NULL,
+    id_auto INT UNSIGNED NOT NULL,
+    fecha_hora DATETIME NOT NULL,
+    observaciones VARCHAR(500),
+    estado ENUM(
+        'PENDIENTE',
+        'CONFIRMADA',
+        'CANCELADA',
+        'COMPLETADA'
+    ) NOT NULL DEFAULT 'PENDIENTE',
+    fecha_creacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT fk_citas_usuario
+        FOREIGN KEY (id_usuario)
+        REFERENCES usuarios(id_usuario)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT fk_citas_auto
+        FOREIGN KEY (id_auto)
+        REFERENCES autos(id_auto)
+        ON DELETE RESTRICT
+        ON UPDATE CASCADE,
+
+    CONSTRAINT chk_citas_fecha
+        CHECK (fecha_hora >= fecha_creacion),
+
+    INDEX idx_citas_fecha_estado (fecha_hora, estado),
+    INDEX idx_citas_usuario (id_usuario),
+    INDEX idx_citas_auto (id_auto)
+);
