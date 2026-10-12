@@ -1,0 +1,138 @@
+
+USE concesionaria;
+
+-- =========================================
+-- MARCAS
+-- =========================================
+
+INSERT IGNORE INTO marcas (nombre) VALUES
+('Toyota'),
+('Ford'),
+('Volkswagen'),
+('Chevrolet'),
+('Honda'),
+('Fiat'),
+('Renault'),
+('BMW');
+
+-- =========================================
+-- MODELOS
+-- =========================================
+
+INSERT IGNORE INTO modelos (id_marca, nombre)
+SELECT m.id_marca, datos.nombre_modelo
+FROM (
+    SELECT 'Toyota' AS marca, 'Corolla' AS nombre_modelo
+    UNION ALL SELECT 'Toyota', 'Hilux'
+    UNION ALL SELECT 'Ford', 'Focus'
+    UNION ALL SELECT 'Ford', 'Ranger'
+    UNION ALL SELECT 'Volkswagen', 'Golf'
+    UNION ALL SELECT 'Volkswagen', 'Polo'
+    UNION ALL SELECT 'Chevrolet', 'Cruze'
+    UNION ALL SELECT 'Honda', 'Civic'
+    UNION ALL SELECT 'Fiat', 'Cronos'
+    UNION ALL SELECT 'Renault', 'Kangoo'
+    UNION ALL SELECT 'BMW', 'Serie 3'
+) AS datos
+INNER JOIN marcas m ON m.nombre = datos.marca;
+
+-- =========================================
+-- AUTOS
+-- Todos los vehículos son ficticios.
+-- =========================================
+
+INSERT INTO autos (
+    id_modelo,
+    titulo,
+    anio,
+    precio,
+    kilometraje,
+    combustible,
+    transmision,
+    descripcion,
+    color,
+    ciudad,
+    estado,
+    fecha_publicacion
+)
+SELECT
+    mo.id_modelo,
+    d.titulo,
+    d.anio,
+    d.precio,
+    d.kilometraje,
+    d.combustible,
+    d.transmision,
+    d.descripcion,
+    d.color,
+    d.ciudad,
+    'PUBLICADO',
+    CURRENT_TIMESTAMP
+FROM (
+    SELECT 'Toyota' AS marca, 'Corolla' AS modelo,
+        'Toyota Corolla XEI 2.0' AS titulo,
+        2022 AS anio, 24500000.00 AS precio,
+        32000 AS kilometraje, 'NAFTA' AS combustible,
+        'AUTOMATICA' AS transmision,
+        'Sedán de prueba con equipamiento completo.' AS descripcion,
+        'Blanco' AS color, 'Buenos Aires' AS ciudad
+
+    UNION ALL SELECT 'Ford', 'Focus',
+        'Ford Focus SE 2.0',
+        2019, 16800000.00, 65000, 'NAFTA',
+        'MANUAL', 'Hatchback ficticio para probar filtros.',
+        'Gris', 'Rosario'
+
+    UNION ALL SELECT 'Volkswagen', 'Polo',
+        'Volkswagen Polo Highline',
+        2023, 22900000.00, 18000, 'NAFTA',
+        'AUTOMATICA', 'Vehículo de prueba con bajo kilometraje.',
+        'Negro', 'Córdoba'
+
+    UNION ALL SELECT 'Toyota', 'Hilux',
+        'Toyota Hilux SRX 4x4',
+        2021, 38500000.00, 55000, 'DIESEL',
+        'AUTOMATICA', 'Pickup ficticia para probar filtros por precio.',
+        'Gris oscuro', 'Mendoza'
+
+    UNION ALL SELECT 'Fiat', 'Cronos',
+        'Fiat Cronos Drive 1.3',
+        2022, 17500000.00, 40000, 'NAFTA',
+        'MANUAL', 'Sedán de prueba económico.',
+        'Rojo', 'Santa Fe'
+
+    UNION ALL SELECT 'Chevrolet', 'Cruze',
+        'Chevrolet Cruze LTZ',
+        2020, 21500000.00, 48000, 'NAFTA',
+        'AUTOMATICA', 'Vehículo ficticio con caja automática.',
+        'Azul', 'Paraná'
+
+    UNION ALL SELECT 'Honda', 'Civic',
+        'Honda Civic EXL',
+        2021, 27800000.00, 29000, 'NAFTA',
+        'AUTOMATICA', 'Sedán ficticio para comparación.',
+        'Plateado', 'Buenos Aires'
+
+    UNION ALL SELECT 'Renault', 'Kangoo',
+        'Renault Kangoo Express',
+        2018, 14200000.00, 85000, 'NAFTA',
+        'MANUAL', 'Utilitario ficticio para el catálogo.',
+        'Blanco', 'Rosario'
+
+    UNION ALL SELECT 'BMW', 'Serie 3',
+        'BMW Serie 3 320i',
+        2022, 42000000.00, 22000, 'NAFTA',
+        'AUTOMATICA', 'Sedán premium ficticio.',
+        'Negro', 'Córdoba'
+
+    UNION ALL SELECT 'Ford', 'Ranger',
+        'Ford Ranger XLS 3.2',
+        2020, 72000 AS kilometraje, 29900000.00,
+        'DIESEL', 'MANUAL',
+        'Pickup ficticia para probar búsquedas.',
+        'Blanco', 'Mendoza'
+) AS d
+INNER JOIN marcas ma ON ma.nombre = d.marca
+INNER JOIN modelos mo
+    ON mo.id_marca = ma.id_marca
+    AND mo.nombre = d.modelo;
