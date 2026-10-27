@@ -1,0 +1,63 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }} | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="vehicle-detail-page section">
+    <div class="container">
+        <a class="back-link" href="{{ path('app_auto_index') }}">← Volver al catálogo</a>
+
+        <div class="vehicle-detail">
+            <div class="vehicle-gallery">
+                {% set imagenPrincipal = auto.imagenes|first %}
+                {% if imagenPrincipal %}
+                    <img class="detail-main-image" src="{{ imagenPrincipal.ruta starts with 'http' ? imagenPrincipal.ruta : asset(imagenPrincipal.ruta|trim('/')) }}" alt="{{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }}">
+                {% else %}
+                    <div class="detail-placeholder" aria-hidden="true">🚗</div>
+                {% endif %}
+                {% if auto.imagenes|length > 1 %}
+                    <div class="image-thumbnails">
+                        {% for imagen in auto.imagenes %}
+                            <img src="{{ imagen.ruta starts with 'http' ? imagen.ruta : asset(imagen.ruta|trim('/')) }}" alt="Vista {{ loop.index }} de {{ auto.modelo.nombre }}">
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="vehicle-detail-info">
+                <span class="availability-badge detail-badge">Disponible</span>
+                <p class="vehicle-brand">{{ auto.modelo.marca.nombre }}</p>
+                <h1>{{ auto.modelo.nombre }}</h1>
+                <p class="vehicle-price detail-price">$ {{ auto.precio|number_format(0, ',', '.') }}</p>
+
+                <dl class="detail-specs">
+                    <div><dt>Año</dt><dd>{{ auto.anio }}</dd></div>
+                    <div><dt>Kilometraje</dt><dd>{{ auto.kilometraje|number_format(0, ',', '.') }} km</dd></div>
+                    <div><dt>Estado</dt><dd>{{ auto.estado|capitalize }}</dd></div>
+                </dl>
+
+                {% if auto.descripcion %}
+                    <div class="vehicle-description">
+                        <h2>Descripción</h2>
+                        <p>{{ auto.descripcion }}</p>
+                    </div>
+                {% endif %}
+
+                {% set chatPath = app.request.basePath ~ '/chat?auto=' ~ auto.id %}
+                <div class="detail-actions">
+                    <a class="btn btn-primary" href="{{ app.user ? chatPath : app.request.basePath ~ '/login?redirect=' ~ chatPath|url_encode }}">Realizar consulta</a>
+                    <a class="btn btn-outline" href="{{ app.request.basePath }}/financiamiento/{{ auto.id }}">Calcular financiación</a>
+                    <form method="post" action="{{ path('app_auto_favorite_toggle', {id: auto.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('favorito_' ~ auto.id) }}">
+                        <button class="btn btn-outline" type="submit">{{ esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos' }}</button>
+                    </form>
+                    <form method="post" action="{{ path('app_auto_compare_toggle', {id: auto.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('comparar_' ~ auto.id) }}">
+                        <button class="btn btn-outline" type="submit">Comparar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

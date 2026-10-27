@@ -10,7 +10,7 @@
     <meta name="description"
           content="{% block description %}Encontrá tu próximo auto en Luxury Cars.{% endblock %}">
 
-    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="{{ app.request.basePath }}/assets/css/styles.css">
 
     {% block styles %}{% endblock %}
 </head>
@@ -19,6 +19,13 @@
     {% include "header.html.twig" %}
 
     <main id="contenido-principal">
+        <div class="container flash-container" aria-live="polite">
+            {% for tipo, mensajes in app.flashes %}
+                {% for mensaje in mensajes %}
+                    <div class="flash flash-{{ tipo }}">{{ mensaje }}</div>
+                {% endfor %}
+            {% endfor %}
+        </div>
         {% block content %}{% endblock %}
     </main>
 

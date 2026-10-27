@@ -2,24 +2,24 @@
 <header class="site-header">
     <div class="container header-container">
 
-        <a href="/" class="brand">
+        <a href="{{ path('app_home') }}" class="brand">
             <span class="brand-icon">LC</span>
             <span class="brand-name">LUXURY<span>CARS</span></span>
         </a>
 
         <nav class="main-navigation">
-            <a href="/" class="nav-link">Inicio</a>
-            <a href="/autos" class="nav-link">Explorar autos</a>
-            <a href="/financiacion" class="nav-link">Financiación</a>
-            <a href="/contacto" class="nav-link">Contacto</a>
+            <a href="{{ path('app_home') }}" class="nav-link">Inicio</a>
+            <a href="{{ path('app_auto_index') }}" class="nav-link">Explorar autos</a>
+            <a href="{{ app.request.basePath }}/financiacion" class="nav-link">Financiación</a>
+            <a href="{{ app.request.basePath }}/contacto" class="nav-link">Contacto</a>
 
             <div class="nav-actions">
-                {% if usuario is defined and usuario %}
-                    <a href="/favoritos" class="nav-link">Favoritos</a>
-                    <a href="/mi-cuenta" class="btn btn-outline">Mi cuenta</a>
+                {% if app.user %}
+                    <a href="{{ path('app_favorite_index') }}" class="nav-link">Favoritos</a>
+                    <a href="{{ app.request.basePath }}/mi-cuenta" class="btn btn-outline">Mi cuenta</a>
                 {% else %}
-                    <a href="/login" class="nav-link">Ingresar</a>
-                    <a href="/registro" class="btn btn-primary">
+                    <a href="{{ app.request.basePath }}/login" class="nav-link">Ingresar</a>
+                    <a href="{{ app.request.basePath }}/registro" class="btn btn-primary">
                         Crear cuenta
                     </a>
                 {% endif %}

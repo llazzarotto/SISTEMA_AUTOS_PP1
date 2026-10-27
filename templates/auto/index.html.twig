@@ -1,20 +1,111 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello AutoController!{% endblock %}
+{% block title %}Catálogo de vehículos | Luxury Cars{% endblock %}
 
-{% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+{% block description %}Explorá los vehículos disponibles y filtrá el catálogo según tus preferencias.{% endblock %}
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
+{% block content %}
+<section class="catalog-page section">
+    <div class="container">
+        <div class="catalog-heading">
+            <div>
+                <span class="eyebrow">CATÁLOGO</span>
+                <h1>Explorá nuestro inventario</h1>
+                <p>{{ total }} {{ total == 1 ? 'vehículo disponible' : 'vehículos disponibles' }}</p>
+            </div>
+            <a class="btn btn-outline" href="{{ path('app_auto_compare') }}">
+                Comparar ({{ comparadorIds|length }}/2)
+            </a>
+        </div>
 
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>D:/ies/pp1/laragon/www/sistema_autos/autos/src/Controller/AutoController.php</code></li>
-        <li>Your template at <code>D:/ies/pp1/laragon/www/sistema_autos/autos/templates/auto/index.html.twig</code></li>
-    </ul>
-</div>
+        <form class="catalog-filters" method="get" action="{{ path('app_auto_index') }}">
+            <div class="filter-search">
+                <label for="q">Buscar</label>
+                <input id="q" name="q" type="search" value="{{ filtros.q }}" placeholder="Marca, modelo o año">
+            </div>
+
+            <details class="filter-panel" {{ app.request.query.count > 0 ? 'open' : '' }}>
+                <summary>Filtros de búsqueda</summary>
+                <div class="filter-grid">
+                    <div>
+                        <label for="precioMin">Precio mínimo</label>
+                        <input id="precioMin" name="precioMin" type="number" min="0" step="1" value="{{ filtros.precioMin }}">
+                    </div>
+                    <div>
+                        <label for="precioMax">Precio máximo</label>
+                        <input id="precioMax" name="precioMax" type="number" min="0" step="1" value="{{ filtros.precioMax }}">
+                    </div>
+                    <div>
+                        <label for="kilometrajeMax">Kilometraje máximo</label>
+                        <input id="kilometrajeMax" name="kilometrajeMax" type="number" min="0" step="1" value="{{ filtros.kilometrajeMax }}">
+                    </div>
+                    <div>
+                        <label for="anioDesde">Año desde</label>
+                        <input id="anioDesde" name="anioDesde" type="number" min="1886" max="{{ 'now'|date('Y') + 1 }}" value="{{ filtros.anioDesde }}">
+                    </div>
+                    <div>
+                        <label for="anioHasta">Año hasta</label>
+                        <input id="anioHasta" name="anioHasta" type="number" min="1886" max="{{ 'now'|date('Y') + 1 }}" value="{{ filtros.anioHasta }}">
+                    </div>
+                    <div>
+                        <label for="marca">Marca</label>
+                        <select id="marca" name="marca">
+                            <option value="">Todas</option>
+                            {% for marca in marcas %}
+                                <option value="{{ marca.id }}" {{ filtros.marca == marca.id ? 'selected' : '' }}>{{ marca.nombre }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label for="orden">Ordenar</label>
+                        <select id="orden" name="orden">
+                            <option value="recientes" {{ filtros.orden == 'recientes' ? 'selected' : '' }}>Más recientes</option>
+                            <option value="precio_asc" {{ filtros.orden == 'precio_asc' ? 'selected' : '' }}>Menor precio</option>
+                            <option value="precio_desc" {{ filtros.orden == 'precio_desc' ? 'selected' : '' }}>Mayor precio</option>
+                            <option value="anio_asc" {{ filtros.orden == 'anio_asc' ? 'selected' : '' }}>Año: menor a mayor</option>
+                            <option value="km_asc" {{ filtros.orden == 'km_asc' ? 'selected' : '' }}>Menor kilometraje</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="filter-actions">
+                    <button class="btn btn-primary" type="submit">Aplicar filtros</button>
+                    <a class="btn btn-outline" href="{{ path('app_auto_index') }}">Limpiar</a>
+                </div>
+            </details>
+        </form>
+
+        {% if autos|length > 0 %}
+            <div class="vehicle-grid">
+                {% for auto in autos %}
+                    {% include 'auto/_card.html.twig' with {auto: auto, comparadorIds: comparadorIds} only %}
+                {% endfor %}
+            </div>
+
+            {% if totalPaginas > 1 %}
+                <nav class="pagination" aria-label="Paginación del catálogo">
+                    {% if pagina > 1 %}
+                        <a href="{{ path('app_auto_index', app.request.query.all|merge({pagina: pagina - 1})) }}">Anterior</a>
+                    {% endif %}
+                    <span>Página {{ pagina }} de {{ totalPaginas }}</span>
+                    {% if pagina < totalPaginas %}
+                        <a href="{{ path('app_auto_index', app.request.query.all|merge({pagina: pagina + 1})) }}">Siguiente</a>
+                    {% endif %}
+                </nav>
+            {% endif %}
+        {% else %}
+            <div class="empty-state">
+                <span aria-hidden="true">⌕</span>
+                {% if app.request.query.count > 0 %}
+                    <h2>No se encontraron vehículos</h2>
+                    <p>Probá modificando o eliminando los filtros aplicados.</p>
+                    <a class="btn btn-outline" href="{{ path('app_auto_index') }}">Eliminar filtros</a>
+                {% else %}
+                    <h2>No hay vehículos disponibles</h2>
+                    <p>Intentá nuevamente más tarde.</p>
+                    <a class="btn btn-outline" href="{{ path('app_home') }}">Volver al inicio</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</section>
 {% endblock %}

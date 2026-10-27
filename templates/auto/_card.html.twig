@@ -1,0 +1,29 @@
+<article class="vehicle-card">
+    <a class="vehicle-image" href="{{ path('app_auto_show', {id: auto.id}) }}" aria-label="Ver {{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }}">
+        {% set imagen = auto.imagenes|first %}
+        {% if imagen %}
+            <img src="{{ imagen.ruta starts with 'http' ? imagen.ruta : asset(imagen.ruta|trim('/')) }}" alt="{{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }}">
+        {% else %}
+            <span class="vehicle-placeholder" aria-hidden="true">🚗</span>
+        {% endif %}
+        <span class="availability-badge">Disponible</span>
+    </a>
+    <div class="vehicle-card-body">
+        <p class="vehicle-brand">{{ auto.modelo.marca.nombre }}</p>
+        <h2><a href="{{ path('app_auto_show', {id: auto.id}) }}">{{ auto.modelo.nombre }}</a></h2>
+        <p class="vehicle-price">$ {{ auto.precio|number_format(0, ',', '.') }}</p>
+        <dl class="vehicle-specs">
+            <div><dt>Año</dt><dd>{{ auto.anio }}</dd></div>
+            <div><dt>Kilometraje</dt><dd>{{ auto.kilometraje|number_format(0, ',', '.') }} km</dd></div>
+        </dl>
+        <div class="vehicle-card-actions">
+            <a class="btn btn-primary" href="{{ path('app_auto_show', {id: auto.id}) }}">Ver detalle</a>
+            <form method="post" action="{{ path('app_auto_compare_toggle', {id: auto.id}) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('comparar_' ~ auto.id) }}">
+                <button class="btn btn-outline" type="submit">
+                    {{ auto.id in (comparadorIds|default([])) ? 'Quitar' : 'Comparar' }}
+                </button>
+            </form>
+        </div>
+    </div>
+</article>

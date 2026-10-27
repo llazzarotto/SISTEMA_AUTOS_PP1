@@ -1,0 +1,60 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Comparador de vehículos | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="compare-page section">
+    <div class="container narrow-container">
+        <a class="back-link" href="{{ path('app_auto_index') }}">← Volver al catálogo</a>
+        <div class="section-heading compare-heading">
+            <span class="eyebrow">COMPARADOR</span>
+            <h1>Compará hasta dos vehículos</h1>
+        </div>
+
+        {% if autos|length > 0 %}
+            <div class="compare-grid">
+                {% for auto in autos %}
+                    <article class="compare-card">
+                        {% set imagen = auto.imagenes|first %}
+                        {% if imagen %}
+                            <img src="{{ imagen.ruta starts with 'http' ? imagen.ruta : asset(imagen.ruta|trim('/')) }}" alt="{{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }}">
+                        {% else %}
+                            <div class="compare-placeholder" aria-hidden="true">🚗</div>
+                        {% endif %}
+                        <p class="vehicle-brand">{{ auto.modelo.marca.nombre }}</p>
+                        <h2><a href="{{ path('app_auto_show', {id: auto.id}) }}">{{ auto.modelo.nombre }}</a></h2>
+                        <dl class="compare-specs">
+                            <div><dt>Año</dt><dd>{{ auto.anio }}</dd></div>
+                            <div><dt>Precio</dt><dd>$ {{ auto.precio|number_format(0, ',', '.') }}</dd></div>
+                            <div><dt>Kilometraje</dt><dd>{{ auto.kilometraje|number_format(0, ',', '.') }} km</dd></div>
+                            <div><dt>Estado</dt><dd>{{ auto.estado|capitalize }}</dd></div>
+                        </dl>
+                        <form method="post" action="{{ path('app_auto_compare_toggle', {id: auto.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('comparar_' ~ auto.id) }}">
+                            <input type="hidden" name="destino" value="comparador">
+                            <button class="btn btn-outline" type="submit">Quitar</button>
+                        </form>
+                    </article>
+                {% endfor %}
+                {% if autos|length < 2 %}
+                    <div class="compare-empty-slot">
+                        <p>Elegí otro vehículo para completar la comparación.</p>
+                        <a class="btn btn-outline" href="{{ path('app_auto_index') }}">Explorar catálogo</a>
+                    </div>
+                {% endif %}
+            </div>
+            <form class="compare-clear" method="post" action="{{ path('app_auto_compare_clear') }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('limpiar_comparador') }}">
+                <button class="btn btn-outline" type="submit">Limpiar comparación</button>
+            </form>
+        {% else %}
+            <div class="empty-state">
+                <span aria-hidden="true">⇄</span>
+                <h2>Todavía no seleccionaste vehículos</h2>
+                <p>Agregá hasta dos unidades desde el catálogo o desde su ficha.</p>
+                <a class="btn btn-primary" href="{{ path('app_auto_index') }}">Explorar catálogo</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

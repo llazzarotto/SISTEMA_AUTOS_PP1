@@ -1,19 +1,10 @@
 
 <?php
 
-require dirname(__DIR__) . '/vendor/autoload.php';
+use App\Kernel;
 
-use Twig\Environment;
-use Twig\Loader\FilesystemLoader;
+require_once dirname(__DIR__).'/vendor/autoload_runtime.php';
 
-$loader = new \Twig\Loader\FilesystemLoader(__DIR__ . '/../templates');
-
-$twig = new Environment($loader, [
-    'cache' => false,
-    'autoescape' => 'html',
-    'strict_variables' => false,
-]);
-
-echo $twig->render('home.html.twig', [
-    'usuario' => null,
-]);
+return static function (array $context): Kernel {
+    return new Kernel($context['APP_ENV'], (bool) $context['APP_DEBUG']);
+};
