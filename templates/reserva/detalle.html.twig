@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Detalle de la cita | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="section reserva-page">
+    <div class="container reserva-narrow">
+        <div class="panel-form {{ registrada ? 'success-panel' }}">
+            {% if registrada %}
+                <div class="result-icon result-success">✓</div>
+                <span class="eyebrow">RESERVA REGISTRADA</span>
+                <h1>¡Listo! Tu cita fue registrada.</h1>
+                <p>El comprobante demostrativo se mostraria para <strong>{{ cita.usuario.email }}</strong>.</p>
+            {% else %}
+                <span class="eyebrow">DETALLE DE LA CITA</span>
+                <h1>{{ cita.tipoServicio }}</h1>
+            {% endif %}
+
+            <dl class="summary-list">
+                <div><dt>Estado</dt><dd><span class="status status-{{ cita.estado }}">{{ cita.estado|capitalize }}</span></dd></div>
+                <div><dt>Servicio</dt><dd>{{ cita.tipoServicio }}</dd></div>
+                <div><dt>Vehiculo</dt><dd>{{ cita.auto ? cita.auto.modelo.marca.nombre ~ ' ' ~ cita.auto.modelo.nombre ~ ' ' ~ cita.auto.anio : 'Sin vehiculo asociado' }}</dd></div>
+                <div><dt>Fecha</dt><dd>{{ cita.fechaHora|date('d/m/Y') }}</dd></div>
+                <div><dt>Horario</dt><dd>{{ cita.fechaHora|date('H:i') }} hs</dd></div>
+                {% if cita.observaciones %}<div><dt>Observaciones</dt><dd>{{ cita.observaciones }}</dd></div>{% endif %}
+            </dl>
+
+            <div class="form-actions">
+                <a class="btn btn-outline" href="{{ path('app_reservas_index') }}">Ir a Mis citas</a>
+                {% if puedeModificar %}
+                    <a class="btn btn-primary" href="{{ path('app_reservas_reprogramar', {id: cita.id}) }}">Reprogramar</a>
+                    <a class="text-link text-danger" href="{{ path('app_reservas_cancelar', {id: cita.id}) }}">Cancelar cita</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

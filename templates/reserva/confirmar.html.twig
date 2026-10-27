@@ -1,0 +1,28 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Confirmar reserva | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="section reserva-page">
+    <div class="container reserva-narrow">
+        <div class="stepper" aria-label="Paso 3 de 3"><span class="is-done">1</span><i></i><span class="is-done">2</span><i></i><span class="is-active">3</span></div>
+        <div class="panel-form">
+            <span class="eyebrow">CONFIRMAR RESERVA</span>
+            <h1>Revisa los datos</h1>
+            <dl class="summary-list">
+                <div><dt>Servicio</dt><dd>{{ borrador.servicio }}</dd></div>
+                <div><dt>Vehiculo</dt><dd>{{ auto ? auto.modelo.marca.nombre ~ ' ' ~ auto.modelo.nombre ~ ' ' ~ auto.anio : 'Sin vehiculo asociado' }}</dd></div>
+                <div><dt>Fecha</dt><dd>{{ fechaHora|date('d/m/Y') }}</dd></div>
+                <div><dt>Horario</dt><dd>{{ fechaHora|date('H:i') }} hs</dd></div>
+                {% if borrador.observaciones %}<div><dt>Observaciones</dt><dd>{{ borrador.observaciones }}</dd></div>{% endif %}
+            </dl>
+            <div class="info-box">La cita quedara pendiente hasta que el concesionario la confirme. El comprobante demostrativo se dirigira a <strong>{{ usuario.email }}</strong>.</div>
+            <form method="post" class="form-actions">
+                <input type="hidden" name="_token" value="{{ csrf_token('confirmar_reserva') }}">
+                <a class="btn btn-outline" href="{{ path('app_reservas_horario') }}">Volver</a>
+                <button class="btn btn-primary" type="submit">Confirmar reserva</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

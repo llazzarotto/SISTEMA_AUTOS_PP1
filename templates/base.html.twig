@@ -10,7 +10,7 @@
     <meta name="description"
           content="{% block description %}Encontrá tu próximo auto en Luxury Cars.{% endblock %}">
 
-    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="{{ asset('assets/css/styles.css') }}">
 
     {% block styles %}{% endblock %}
 </head>
@@ -19,9 +19,11 @@
     {% include "header.html.twig" %}
 
     <main id="contenido-principal">
+        {% include "reserva/_flashes.html.twig" ignore missing %}
         {% block content %}{% endblock %}
     </main>
 
     {% include "footer.html.twig" %}
+    {% block javascripts %}{% endblock %}
 </body>
 </html>

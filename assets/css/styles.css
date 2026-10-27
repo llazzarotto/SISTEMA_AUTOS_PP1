@@ -562,3 +562,312 @@ a:focus-visible {
     }
 }
 }
+
+
+/* =========================
+   CU05 - RESERVA DE CITAS
+========================= */
+
+.reserva-page {
+    min-height: 70vh;
+    background: linear-gradient(180deg, rgba(215, 25, 32, 0.04), transparent 340px);
+}
+
+.reserva-narrow { max-width: 780px; }
+
+.reserva-heading {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 36px;
+}
+
+.reserva-heading h1,
+.panel-form h1 {
+    margin: 8px 0 10px;
+    font-size: clamp(32px, 5vw, 46px);
+    line-height: 1.12;
+}
+
+.reserva-heading p,
+.panel-form > p { margin: 0; color: var(--muted); }
+
+.flash-stack { padding-top: 18px; }
+.flash {
+    padding: 14px 18px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--red);
+    border-radius: 8px;
+    background: var(--surface);
+}
+.flash + .flash { margin-top: 8px; }
+.flash-success { border-left-color: #25843b; }
+
+.reserva-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--border);
+}
+
+.reserva-tab {
+    padding: 12px 18px;
+    border: 0;
+    border-bottom: 3px solid transparent;
+    color: var(--muted);
+    background: transparent;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.reserva-tab.is-active { border-color: var(--red); color: var(--text); }
+
+.citas-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.citas-grid.is-hidden { display: none; }
+
+.cita-card,
+.panel-form,
+.empty-state {
+    padding: 26px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg);
+    box-shadow: 0 16px 45px rgba(23, 23, 23, 0.06);
+}
+
+.cita-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cita-service { font-size: 18px; font-weight: 900; }
+.cita-card p { margin: 5px 0 0; color: var(--muted); font-size: 14px; }
+
+.status {
+    display: inline-flex;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #fff3cf;
+    color: #7b5900;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.status-confirmada { background: #ddf6e2; color: #176429; }
+.status-cancelada { background: #ffe0e0; color: #9b151a; }
+.status-completada { background: #e6e9ee; color: #454b55; }
+
+.cita-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 22px 0;
+}
+
+.cita-meta div,
+.summary-list div {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.cita-meta dt,
+.summary-list dt { color: var(--muted); font-size: 13px; }
+
+.cita-meta dd,
+.summary-list dd { margin: 0; font-weight: 800; text-align: right; }
+
+.cita-actions,
+.form-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.text-link { color: var(--red); font-size: 14px; font-weight: 800; }
+.text-danger { color: #9b151a; }
+
+.empty-state { grid-column: 1 / -1; text-align: center; }
+.empty-state p { color: var(--muted); }
+
+.stepper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 22px;
+}
+
+.stepper span {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    color: var(--muted);
+    background: var(--bg);
+    font-weight: 900;
+}
+
+.stepper span.is-active,
+.stepper span.is-done {
+    border-color: var(--red);
+    color: var(--white);
+    background: var(--red);
+}
+
+.stepper i { width: 80px; height: 2px; background: var(--border); }
+
+.reserva-form {
+    display: grid;
+    gap: 20px;
+    margin-top: 26px;
+}
+
+.reserva-form label {
+    display: grid;
+    gap: 7px;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.reserva-form label small,
+.reserva-form > label > small { color: var(--muted); font-weight: 500; }
+
+.reserva-form input[type="date"],
+.reserva-form select,
+.reserva-form textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    background: var(--bg);
+}
+
+.reserva-form input:focus,
+.reserva-form select:focus,
+.reserva-form textarea:focus {
+    border-color: var(--red);
+    outline: 3px solid rgba(215, 25, 32, 0.12);
+}
+
+.form-actions {
+    justify-content: flex-end;
+    margin-top: 26px;
+}
+
+.reserva-form .form-actions { margin-top: 6px; }
+
+.time-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 24px;
+}
+
+.time-option { display: block; cursor: pointer; }
+.time-option input { position: absolute; opacity: 0; pointer-events: none; }
+
+.time-option span {
+    display: block;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
+    font-weight: 800;
+    transition: 0.2s ease;
+}
+
+.time-option input:checked + span,
+.time-option:hover span {
+    border-color: var(--red);
+    color: var(--white);
+    background: var(--red);
+}
+
+.availability-error,
+.info-box,
+.suggestions {
+    grid-column: 1 / -1;
+    padding: 15px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.suggestions a { color: var(--red); font-weight: 800; }
+
+.summary-list {
+    display: grid;
+    gap: 0;
+    margin: 26px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.summary-list div { padding: 14px 16px; }
+.summary-list div + div { border-top: 1px solid var(--border); }
+
+.info-box { margin-bottom: 20px; color: var(--muted); font-size: 14px; }
+.success-panel,
+.danger-panel { text-align: center; }
+
+.result-icon {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 18px;
+    border: 3px solid;
+    border-radius: 50%;
+    font-size: 34px;
+    font-weight: 900;
+}
+
+.result-success { border-color: #25843b; color: #25843b; }
+.result-warning { border-color: var(--red); color: var(--red); }
+
+.success-panel .form-actions,
+.danger-panel .form-actions { justify-content: center; }
+
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+@media (max-width: 720px) {
+    .reserva-heading { align-items: stretch; flex-direction: column; }
+    .citas-grid { grid-template-columns: 1fr; }
+    .time-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .panel-form,
+    .cita-card,
+    .empty-state { padding: 20px; }
+
+    .summary-list div,
+    .cita-meta div {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .summary-list dd,
+    .cita-meta dd { text-align: left; }
+
+    .form-actions .btn { flex: 1 1 auto; }
+}

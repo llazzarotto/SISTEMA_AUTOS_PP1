@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mis citas | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="section reserva-page">
+    <div class="container">
+        <div class="reserva-heading">
+            <div>
+                <span class="eyebrow">CU05 · RESERVAS</span>
+                <h1>Mis citas</h1>
+                <p>Consulta tus proximas visitas y el historial de reservas.</p>
+            </div>
+            <a class="btn btn-primary" href="{{ path('app_reservas_nueva') }}">Reservar una cita</a>
+        </div>
+
+        <div class="reserva-tabs" role="tablist" aria-label="Tipos de citas">
+            <button class="reserva-tab is-active" type="button" data-tab="proximas">Proximas</button>
+            <button class="reserva-tab" type="button" data-tab="historial">Historial</button>
+        </div>
+
+        <div class="citas-grid" data-panel="proximas">
+            {% for cita in proximas %}
+                {% include 'reserva/_tarjeta.html.twig' with { cita: cita, mostrarAcciones: true } %}
+            {% else %}
+                <div class="empty-state">
+                    <strong>No tenes citas proximas.</strong>
+                    <p>Elegí un servicio, una fecha y un horario para comenzar.</p>
+                    <a class="btn btn-primary" href="{{ path('app_reservas_nueva') }}">Nueva reserva</a>
+                </div>
+            {% endfor %}
+        </div>
+
+        <div class="citas-grid is-hidden" data-panel="historial">
+            {% for cita in historial %}
+                {% include 'reserva/_tarjeta.html.twig' with { cita: cita, mostrarAcciones: false } %}
+            {% else %}
+                <div class="empty-state"><strong>Todavia no hay citas en el historial.</strong></div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.querySelectorAll('[data-tab]').forEach((tab) => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('[data-tab]').forEach((item) => item.classList.toggle('is-active', item === tab));
+        document.querySelectorAll('[data-panel]').forEach((panel) => panel.classList.toggle('is-hidden', panel.dataset.panel !== tab.dataset.tab));
+    });
+});
+</script>
+{% endblock %}

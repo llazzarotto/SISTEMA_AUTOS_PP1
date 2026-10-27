@@ -1,0 +1,57 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Nueva reserva | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="section reserva-page">
+    <div class="container reserva-narrow">
+        <div class="stepper" aria-label="Paso 1 de 3"><span class="is-active">1</span><i></i><span>2</span><i></i><span>3</span></div>
+        <div class="panel-form">
+            <span class="eyebrow">NUEVA RESERVA</span>
+            <h1>Elegí el servicio y la fecha</h1>
+            <p>Las citas se reservan con un minimo de 24 horas de anticipacion.</p>
+
+            <form method="post" class="reserva-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('reserva_datos') }}">
+                <label>
+                    Tipo de servicio
+                    <select name="servicio" required>
+                        <option value="">Seleccionar</option>
+                        {% for servicio in servicios %}
+                            <option value="{{ servicio }}" {{ borrador.servicio|default('') == servicio ? 'selected' }}>{{ servicio }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label>
+                    Vehiculo de interes <small>(opcional)</small>
+                    <select name="auto">
+                        <option value="">Ninguno</option>
+                        {% for auto in autos %}
+                            <option value="{{ auto.id }}" {{ borrador.autoId|default(null) == auto.id ? 'selected' }}>
+                                {{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }} {{ auto.anio }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label>
+                    Fecha
+                    <input type="date" name="fecha" min="{{ fechaMinima }}" value="{{ borrador.fecha|default('') }}" required>
+                    <small>Lunes a viernes, de 08:30 a 18:00.</small>
+                </label>
+
+                <label>
+                    Observaciones <small>(opcional)</small>
+                    <textarea name="observaciones" maxlength="1000" rows="3" placeholder="Información adicional para la visita">{{ borrador.observaciones|default('') }}</textarea>
+                </label>
+
+                <div class="form-actions">
+                    <a class="btn btn-outline" href="{{ path('app_reservas_index') }}">Volver</a>
+                    <button class="btn btn-primary" type="submit">Continuar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

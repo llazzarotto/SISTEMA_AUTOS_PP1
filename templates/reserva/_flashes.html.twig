@@ -1,0 +1,7 @@
+{% for tipo, mensajes in app.flashes %}
+    <div class="container flash-stack" aria-live="polite">
+        {% for mensaje in mensajes %}
+            <div class="flash flash-{{ tipo }}">{{ mensaje }}</div>
+        {% endfor %}
+    </div>
+{% endfor %}

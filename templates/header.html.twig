@@ -14,8 +14,10 @@
             <a href="/contacto" class="nav-link">Contacto</a>
 
             <div class="nav-actions">
-                {% if usuario is defined and usuario %}
+                {% set usuarioActual = usuario|default(app.user) %}
+                {% if usuarioActual %}
                     <a href="/favoritos" class="nav-link">Favoritos</a>
+                    <a href="{{ path('app_reservas_index') }}" class="nav-link">Mis citas</a>
                     <a href="/mi-cuenta" class="btn btn-outline">Mi cuenta</a>
                 {% else %}
                     <a href="/login" class="nav-link">Ingresar</a>

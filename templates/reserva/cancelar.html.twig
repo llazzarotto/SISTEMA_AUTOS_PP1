@@ -1,0 +1,21 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Cancelar cita | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="section reserva-page">
+    <div class="container reserva-narrow">
+        <div class="panel-form danger-panel">
+            <div class="result-icon result-warning">!</div>
+            <span class="eyebrow">CANCELAR CITA</span>
+            <h1>¿Confirmas la cancelacion?</h1>
+            <p>Esta accion liberara el turno del {{ cita.fechaHora|date('d/m/Y') }} a las {{ cita.fechaHora|date('H:i') }} hs.</p>
+            <form method="post" class="form-actions">
+                <input type="hidden" name="_token" value="{{ csrf_token('cancelar_' ~ cita.id) }}">
+                <a class="btn btn-outline" href="{{ path('app_reservas_detalle', {id: cita.id}) }}">Volver</a>
+                <button class="btn btn-primary" type="submit">Confirmar cancelacion</button>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
