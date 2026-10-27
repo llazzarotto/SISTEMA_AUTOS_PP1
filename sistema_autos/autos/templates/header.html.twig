@@ -1,0 +1,30 @@
+
+<header class="site-header">
+    <div class="container header-container">
+
+        <a href="/" class="brand">
+            <span class="brand-icon">A</span>
+            <span class="brand-name">AUTO<span>MARKET</span></span>
+        </a>
+
+        <nav class="main-navigation">
+            <a href="/" class="nav-link">Inicio</a>
+            <a href="/autos" class="nav-link">Explorar autos</a>
+            <a href="/financiacion" class="nav-link">Financiación</a>
+            <a href="/contacto" class="nav-link">Contacto</a>
+
+            <div class="nav-actions">
+                {% if usuario is defined and usuario %}
+                    <a href="/favoritos" class="nav-link">Favoritos</a>
+                    <a href="/mi-cuenta" class="btn btn-outline">Mi cuenta</a>
+                {% else %}
+                    <a href="/login" class="nav-link">Ingresar</a>
+                    <a href="/registro" class="btn btn-primary">
+                        Crear cuenta
+                    </a>
+                {% endif %}
+            </div>
+        </nav>
+
+    </div>
+</header>
