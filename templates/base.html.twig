@@ -10,18 +10,18 @@
     <meta name="description"
           content="{% block description %}Encontrá tu próximo auto en AutoMarket.{% endblock %}">
 
-    <link rel="stylesheet" href="/assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
 
     {% block styles %}{% endblock %}
 </head>
 
 <body>
-    {% include "partials/header.twig" %}
+    {% include "header.html.twig" %}
 
     <main id="contenido-principal">
         {% block content %}{% endblock %}
     </main>
 
-    {% include "partials/footer.twig" %}
+    {% include "footer.html.twig" %}
 </body>
 </html>

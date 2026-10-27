@@ -6,9 +6,7 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
-$loader = new FilesystemLoader(
-    dirname(__DIR__) . '/src/Views'
-);
+$loader = new \Twig\Loader\FilesystemLoader(__DIR__ . '/../templates');
 
 $twig = new Environment($loader, [
     'cache' => false,
@@ -16,6 +14,6 @@ $twig = new Environment($loader, [
     'strict_variables' => false,
 ]);
 
-echo $twig->render('home.twig', [
+echo $twig->render('home.html.twig', [
     'usuario' => null,
 ]);
