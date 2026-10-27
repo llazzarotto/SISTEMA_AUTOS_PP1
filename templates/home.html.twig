@@ -1,0 +1,80 @@
+
+{% extends "base.twig" %}
+
+{% block title %}Inicio | AutoMarket{% endblock %}
+
+{% block description %}
+Explorá vehículos, compará opciones y encontrá tu próximo auto.
+{% endblock %}
+
+{% block content %}
+
+<section class="hero">
+    <div class="container hero-content">
+
+        <div class="hero-text">
+            <span class="eyebrow">TU PRÓXIMO AUTO EMPIEZA ACÁ</span>
+
+            <h1>
+                Encontrá tu próximo
+                <span>camino.</span>
+            </h1>
+
+            <p>
+                Explorá opciones, compará vehículos y encontrá
+                el que mejor se adapte a vos.
+            </p>
+
+            <div class="hero-actions">
+                <a href="/autos" class="btn btn-primary">
+                    Explorar vehículos
+                </a>
+
+                <a href="/contacto" class="btn btn-outline">
+                    Contactanos
+                </a>
+            </div>
+        </div>
+
+        <div class="hero-card">
+            <span class="hero-card-label">AUTOMARKET</span>
+            <div class="hero-card-symbol">A</div>
+            <p>Tu próximo destino está más cerca.</p>
+        </div>
+
+    </div>
+</section>
+
+<section class="features section">
+    <div class="container">
+
+        <div class="section-heading">
+            <span class="eyebrow">UNA FORMA MÁS SIMPLE</span>
+            <h2>Elegí con confianza.</h2>
+            <p>Todo lo que necesitás para encontrar tu próximo vehículo.</p>
+        </div>
+
+        <div class="feature-grid">
+            <article class="feature-card">
+                <span class="feature-number">01</span>
+                <h3>Explorá</h3>
+                <p>Encontrá vehículos y filtrá según tus preferencias.</p>
+            </article>
+
+            <article class="feature-card">
+                <span class="feature-number">02</span>
+                <h3>Compará</h3>
+                <p>Evaluá distintas opciones antes de tomar una decisión.</p>
+            </article>
+
+            <article class="feature-card">
+                <span class="feature-number">03</span>
+                <h3>Consultá</h3>
+                <p>Contactá con atención al cliente y reservá una cita.</p>
+            </article>
+        </div>
+
+    </div>
+</section>
+
+{% endblock %}

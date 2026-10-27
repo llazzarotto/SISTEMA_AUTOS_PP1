@@ -1,0 +1,27 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}AutoMarket{% endblock %}</title>
+
+    <meta name="description"
+          content="{% block description %}Encontrá tu próximo auto en AutoMarket.{% endblock %}">
+
+    <link rel="stylesheet" href="/assets/css/styles.css">
+
+    {% block styles %}{% endblock %}
+</head>
+
+<body>
+    {% include "partials/header.twig" %}
+
+    <main id="contenido-principal">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include "partials/footer.twig" %}
+</body>
+</html>
