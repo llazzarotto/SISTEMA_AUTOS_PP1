@@ -1,0 +1,39 @@
+{% extends 'cuentas/layout.html.twig' %}
+
+{% block title %}Gestión de usuarios | Luxury Cars{% endblock %}
+
+{% block cuentas_content %}
+    <div class="cuentas-heading">
+        <div>
+            <span class="eyebrow">ADMINISTRACIÓN</span>
+            <h1>Gestión de usuarios</h1>
+            <p>Consultá y administrá los usuarios registrados.</p>
+        </div>
+        <a href="{{ path('app_usuario_crear') }}" class="btn btn-primary">Crear usuario</a>
+    </div>
+
+    <div class="cuentas-card cuentas-table-wrapper">
+        <table class="cuentas-table">
+            <thead>
+                <tr>
+                    <th scope="col">Nombre</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Rol</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for usuarioLista in usuarios %}
+                    <tr>
+                        <td>{{ usuarioLista.nombre ?: 'Sin nombre' }}</td>
+                        <td>{{ usuarioLista.email }}</td>
+                        <td>{{ usuarioLista.rol.nombre }}</td>
+                        <td><a href="{{ path('app_usuario_ver', {id: usuarioLista.id}) }}" class="btn btn-outline">Ver detalle</a></td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="4">No hay usuarios registrados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

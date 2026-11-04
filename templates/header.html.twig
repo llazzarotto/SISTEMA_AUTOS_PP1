@@ -14,12 +14,18 @@
             <a href="/contacto" class="nav-link">Contacto</a>
 
             <div class="nav-actions">
-                {% if usuario is defined and usuario %}
+                {% if app.user %}
                     <a href="/favoritos" class="nav-link">Favoritos</a>
-                    <a href="/mi-cuenta" class="btn btn-outline">Mi cuenta</a>
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <a href="{{ path('app_usuarios') }}" class="nav-link">Gestión de usuarios</a>
+                    {% endif %}
+                    <form action="{{ path('app_logout') }}" method="post">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                        <button type="submit" class="btn btn-outline">Cerrar sesión</button>
+                    </form>
                 {% else %}
-                    <a href="/login" class="nav-link">Ingresar</a>
-                    <a href="/registro" class="btn btn-primary">
+                    <a href="{{ path('app_login') }}" class="nav-link">Ingresar</a>
+                    <a href="{{ path('app_registro') }}" class="btn btn-primary">
                         Crear cuenta
                     </a>
                 {% endif %}
