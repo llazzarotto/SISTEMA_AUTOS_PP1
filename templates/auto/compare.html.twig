@@ -1,4 +1,5 @@
 {% extends 'base.html.twig' %}
+{% import 'auto/_image.html.twig' as autoImagen %}
 
 {% block title %}Comparador de vehículos | Luxury Cars{% endblock %}
 
@@ -15,12 +16,7 @@
             <div class="compare-grid">
                 {% for auto in autos %}
                     <article class="compare-card">
-                        {% set imagen = auto.imagenes|first %}
-                        {% if imagen %}
-                            <img src="{{ imagen.ruta starts with 'http' ? imagen.ruta : asset(imagen.ruta|trim('/')) }}" alt="{{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }}">
-                        {% else %}
-                            <div class="compare-placeholder" aria-hidden="true">🚗</div>
-                        {% endif %}
+                        {{ autoImagen.principal(auto, '', 'compare-placeholder', app.request.basePath) }}
                         <p class="vehicle-brand">{{ auto.modelo.marca.nombre }}</p>
                         <h2><a href="{{ path('app_auto_show', {id: auto.id}) }}">{{ auto.modelo.nombre }}</a></h2>
                         <dl class="compare-specs">

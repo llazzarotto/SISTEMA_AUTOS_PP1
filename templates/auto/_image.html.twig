@@ -1,0 +1,19 @@
+{% macro principal(auto, claseImagen, clasePlaceholder, basePath) %}
+    {% set imagen = auto.imagenes|first %}
+    {% if imagen %}
+        {% set ruta = imagen.ruta starts with 'http'
+            ? imagen.ruta
+            : basePath ~ '/' ~ imagen.ruta|trim('/') %}
+        <img{% if claseImagen %} class="{{ claseImagen }}"{% endif %}
+             src="{{ ruta }}"
+             alt="{{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }}">
+    {% elseif auto.id >= 1 and auto.id <= 10 %}
+        {% set extensionesJpg = [7, 8, 10] %}
+        {% set extension = auto.id in extensionesJpg ? 'jpg' : 'jpeg' %}
+        <img{% if claseImagen %} class="{{ claseImagen }}"{% endif %}
+             src="{{ basePath }}/assets/img/auto{{ auto.id }}.{{ extension }}"
+             alt="{{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }}">
+    {% else %}
+        <div class="{{ clasePlaceholder }}" aria-hidden="true">🚗</div>
+    {% endif %}
+{% endmacro %}
