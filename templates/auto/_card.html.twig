@@ -17,6 +17,7 @@
             <a class="btn btn-primary" href="{{ path('app_auto_show', {id: auto.id}) }}">Ver detalle</a>
             <form method="post" action="{{ path('app_auto_compare_toggle', {id: auto.id}) }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('comparar_' ~ auto.id) }}">
+                <input type="hidden" name="destino" value="catalogo">
                 <button class="btn btn-outline" type="submit">
                     {{ auto.id in (comparadorIds|default([])) ? 'Quitar' : 'Comparar' }}
                 </button>

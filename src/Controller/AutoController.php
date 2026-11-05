@@ -109,9 +109,11 @@ final class AutoController extends AbstractController
         $request->getSession()->set(self::CLAVE_COMPARADOR, $ids);
         $destino = $request->request->getString('destino');
 
-        return $destino === 'comparador'
-            ? $this->redirectToRoute('app_auto_compare')
-            : $this->redirectToRoute('app_auto_show', ['id' => $id]);
+        return match ($destino) {
+            'catalogo' => $this->redirectToRoute('app_auto_index'),
+            'comparador' => $this->redirectToRoute('app_auto_compare'),
+            default => $this->redirectToRoute('app_auto_show', ['id' => $id]),
+        };
     }
 
     #[Route('/auto/comparar/limpiar', name: 'app_auto_compare_clear', methods: ['POST'])]

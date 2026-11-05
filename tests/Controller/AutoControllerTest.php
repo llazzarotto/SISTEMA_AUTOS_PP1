@@ -47,6 +47,46 @@ final class AutoControllerTest extends WebTestCase
         self::assertSelectorTextContains('.empty-state h2', 'Todavía no seleccionaste vehículos');
     }
 
+    public function testCompararDesdeElCatalogoAgregaElAutoSinAbrirSuDetalle(): void
+    {
+        $client = static::createClient();
+        $entityManager = static::getContainer()->get('doctrine')->getManager();
+        $sufijo = uniqid('', true);
+        $marca = (new Marca())->setNombre('Marca Comparador CU002 '.$sufijo);
+        $modelo = (new Modelo())->setNombre('Modelo Comparador '.$sufijo)->setMarca($marca);
+        $auto = (new Auto())
+            ->setModelo($modelo)
+            ->setAnio(2024)
+            ->setKilometraje(10000)
+            ->setPrecio(20000)
+            ->setEstado('disponible');
+
+        $entityManager->persist($marca);
+        $entityManager->persist($modelo);
+        $entityManager->persist($auto);
+        $entityManager->flush();
+        $autoId = $auto->getId();
+        $modeloId = $modelo->getId();
+        $marcaId = $marca->getId();
+
+        try {
+            $crawler = $client->request('GET', '/auto?q=Modelo%20Comparador');
+            $form = $crawler->filter('.vehicle-card form')->form();
+            $client->submit($form);
+
+            self::assertResponseRedirects('/auto');
+
+            $client->followRedirect();
+            self::assertSelectorTextContains('.catalog-heading .btn', 'Comparar (1/2)');
+        } finally {
+            $entityManager = static::getContainer()->get('doctrine')->getManager();
+            $entityManager->remove($entityManager->getReference(Auto::class, $autoId));
+            $entityManager->remove($entityManager->getReference(Modelo::class, $modeloId));
+            $entityManager->remove($entityManager->getReference(Marca::class, $marcaId));
+            $entityManager->flush();
+        }
+    }
+
     public function testCatalogoCombinaFiltrosYOcultaUnidadesNoDisponibles(): void
     {
         $client = static::createClient();
