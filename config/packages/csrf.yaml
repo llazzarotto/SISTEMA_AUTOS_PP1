@@ -1,11 +1,8 @@
-# Enable stateless CSRF protection for forms and logins/logouts
+# Los formularios Twig usan tokens de sesión sin requerir JavaScript.
 framework:
     form:
         csrf_protection:
             token_id: submit
 
     csrf_protection:
-        stateless_token_ids:
-            - submit
-            - authenticate
-            - logout
+        stateless_token_ids: []

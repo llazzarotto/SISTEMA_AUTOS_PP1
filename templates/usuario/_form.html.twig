@@ -1,0 +1,14 @@
+{{ form_start(form, {attr: {class: 'cuentas-form'}}) }}
+    {{ form_errors(form) }}
+    {{ form_row(form.nombre) }}
+    {{ form_row(form.email) }}
+    {{ form_row(form.rol) }}
+    {{ form_row(form.fechaNacimiento) }}
+    {% if form.password is defined %}
+        {{ form_row(form.password) }}
+    {% endif %}
+    <div class="cuentas-actions">
+        <button type="submit" class="btn btn-primary">{{ boton }}</button>
+        <a href="{{ cancelar }}" class="btn btn-outline">Cancelar</a>
+    </div>
+{{ form_end(form) }}

@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block content %}
+    <section class="section cuentas-section">
+        <div class="container">
+            {% for tipo, mensajes in app.flashes %}
+                {% for mensaje in mensajes %}
+                    <div class="cuentas-message {{ tipo == 'error' ? 'cuentas-error' : 'cuentas-success' }}" role="status">{{ mensaje }}</div>
+                {% endfor %}
+            {% endfor %}
+            {% block cuentas_content %}{% endblock %}
+        </div>
+    </section>
+{% endblock %}

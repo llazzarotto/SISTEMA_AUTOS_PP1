@@ -6,10 +6,12 @@ use App\Repository\UsuarioRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UsuarioRepository::class)]
 #[ORM\Table(name: 'usuario')]
-class Usuario
+class Usuario implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -25,6 +27,7 @@ class Usuario
     #[ORM\Column(length: 180, unique: true)]
     private ?string $email = null;
 
+    // Contiene el hash generado por Symfony, nunca la contraseña original.
     #[ORM\Column(length: 255)]
     private ?string $password = null;
 
@@ -34,6 +37,9 @@ class Usuario
     #[ORM\ManyToOne(inversedBy: 'usuarios')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Rol $rol = null;
+
+    #[ORM\Column(type: 'date_immutable', nullable: true)]
+    private ?\DateTimeImmutable $fechaNacimiento = null;
 
     /** @var Collection<int, Favorito> */
     #[ORM\OneToMany(targetEntity: Favorito::class, mappedBy: 'usuario', orphanRemoval: true)]
@@ -60,13 +66,55 @@ class Usuario
     public function getApellido(): ?string { return $this->apellido; }
     public function setApellido(string $apellido): static { $this->apellido = $apellido; return $this; }
     public function getEmail(): ?string { return $this->email; }
-    public function setEmail(string $email): static { $this->email = $email; return $this; }
+    public function setEmail(string $email): static { $this->email = strtolower(trim($email)); return $this; }
     public function getPassword(): ?string { return $this->password; }
     public function setPassword(string $password): static { $this->password = $password; return $this; }
     public function getTelefono(): ?string { return $this->telefono; }
     public function setTelefono(?string $telefono): static { $this->telefono = $telefono; return $this; }
     public function getRol(): ?Rol { return $this->rol; }
     public function setRol(?Rol $rol): static { $this->rol = $rol; return $this; }
+    public function getFechaNacimiento(): ?\DateTimeImmutable { return $this->fechaNacimiento; }
+    public function setFechaNacimiento(?\DateTimeImmutable $fechaNacimiento): static { $this->fechaNacimiento = $fechaNacimiento; return $this; }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->email ?? '';
+    }
+
+    public function getRoles(): array
+    {
+        $roles = ['ROLE_USER'];
+        if ($this->rol !== null && $this->rol->getNivel() >= 2) {
+            $roles[] = 'ROLE_ADMIN';
+        }
+
+        return $roles;
+    }
+
+    #[\Deprecated]
+    public function eraseCredentials(): void
+    {
+    }
+
+    public function __serialize(): array
+    {
+        // PHP usa este método al guardar el usuario en la sesión, sin sus relaciones.
+        // crc32c crea una huella del hash para la sesión; no cambia el hash de la base.
+        return [
+            'id' => $this->id,
+            'email' => $this->email,
+            'password' => $this->password === null ? null : hash('crc32c', $this->password),
+        ];
+    }
+
+    public function __unserialize(array $datos): void
+    {
+        // Recupera los datos de sesión; Symfony vuelve a cargar el usuario desde la base.
+        $this->__construct();
+        $this->id = $datos['id'];
+        $this->email = $datos['email'];
+        $this->password = $datos['password'];
+    }
 
     /** @return Collection<int, Favorito> */
     public function getFavoritos(): Collection { return $this->favoritos; }
