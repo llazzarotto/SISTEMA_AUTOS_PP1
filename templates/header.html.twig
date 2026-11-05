@@ -1,4 +1,3 @@
-
 <header class="site-header">
     <div class="container header-container">
 
@@ -16,10 +15,16 @@
             <div class="nav-actions">
                 {% if app.user %}
                     <a href="{{ path('app_favorite_index') }}" class="nav-link">Favoritos</a>
-                    <a href="{{ app.request.basePath }}/mi-cuenta" class="btn btn-outline">Mi cuenta</a>
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <a href="{{ path('app_usuarios') }}" class="nav-link">Gestión de usuarios</a>
+                    {% endif %}
+                    <form action="{{ path('app_logout') }}" method="post">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                        <button type="submit" class="btn btn-outline">Cerrar sesión</button>
+                    </form>
                 {% else %}
-                    <a href="{{ app.request.basePath }}/login" class="nav-link">Ingresar</a>
-                    <a href="{{ app.request.basePath }}/registro" class="btn btn-primary">
+                    <a href="{{ path('app_login') }}" class="nav-link">Ingresar</a>
+                    <a href="{{ path('app_registro') }}" class="btn btn-primary">
                         Crear cuenta
                     </a>
                 {% endif %}

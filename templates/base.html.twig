@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -11,6 +10,7 @@
           content="{% block description %}Encontrá tu próximo auto en Luxury Cars.{% endblock %}">
 
     <link rel="stylesheet" href="{{ app.request.basePath }}/assets/css/styles.css">
+    <link rel="stylesheet" href="{{ app.request.basePath }}/assets/css/cuentas.css">
 
     {% block styles %}{% endblock %}
 </head>
@@ -22,7 +22,7 @@
         <div class="container flash-container" aria-live="polite">
             {% for tipo, mensajes in app.flashes %}
                 {% for mensaje in mensajes %}
-                    <div class="flash flash-{{ tipo }}">{{ mensaje }}</div>
+                    <div class="flash flash-{{ tipo }}" role="status">{{ mensaje }}</div>
                 {% endfor %}
             {% endfor %}
         </div>
