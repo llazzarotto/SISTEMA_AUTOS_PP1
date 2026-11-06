@@ -3,7 +3,7 @@
     <div class="container footer-content">
 
         <div class="footer-brand">
-            <a href="/" class="brand">
+            <a href="{{ path('app_home') }}" class="brand">
                 <span class="brand-icon">A</span>
                 <span class="brand-name">AUTO<span>MARKET</span></span>
             </a>
@@ -14,9 +14,9 @@
         </div>
 
         <div class="footer-links">
-            <a href="/autos">Explorar autos</a>
-            <a href="/financiacion">Financiación</a>
-            <a href="/contacto">Contacto</a>
+            <a href="{{ path('app_auto_index') }}">Explorar autos</a>
+            <a href="{{ app.request.basePath }}/financiacion">Financiación</a>
+            <a href="{{ app.request.basePath }}/contacto">Contacto</a>
         </div>
 
         <div class="footer-bottom">

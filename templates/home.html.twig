@@ -26,11 +26,11 @@ Explorá vehículos, compará opciones y encontrá tu próximo auto.
             </p>
 
             <div class="hero-actions">
-                <a href="/autos" class="btn btn-primary">
+                <a href="{{ path('app_auto_index') }}" class="btn btn-primary">
                     Explorar vehículos
                 </a>
 
-                <a href="/contacto" class="btn btn-outline">
+                <a href="{{ app.request.basePath }}/contacto" class="btn btn-outline">
                     Contactanos
                 </a>
             </div>

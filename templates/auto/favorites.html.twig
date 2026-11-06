@@ -1,0 +1,29 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mis favoritos | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="favorites-page section">
+    <div class="container">
+        <div class="section-heading">
+            <span class="eyebrow">TU SELECCIÓN</span>
+            <h1>Vehículos favoritos</h1>
+        </div>
+
+        {% if favoritos|length > 0 %}
+            <div class="vehicle-grid">
+                {% for favorito in favoritos %}
+                    {% include 'auto/_card.html.twig' with {auto: favorito.auto, comparadorIds: []} only %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <span aria-hidden="true">♡</span>
+                <h2>No guardaste vehículos</h2>
+                <p>Explorá el catálogo y agregá los autos que más te interesen.</p>
+                <a class="btn btn-primary" href="{{ path('app_auto_index') }}">Explorar catálogo</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

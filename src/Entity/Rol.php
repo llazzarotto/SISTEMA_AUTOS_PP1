@@ -32,6 +32,20 @@ class Rol
     public function getNombre(): ?string { return $this->nombre; }
     public function setNombre(string $nombre): static { $this->nombre = $nombre; return $this; }
 
+    public function getNivel(): int
+    {
+        // Los niveles sirven para comparar permisos: Cliente = 1, Administrador = 2.
+        $nombre = strtolower($this->nombre ?? '');
+        if ($nombre === 'administrador' || $nombre === 'admin' || $nombre === 'role_admin') {
+            return 2;
+        }
+        if ($nombre === 'cliente' || $nombre === 'role_cliente' || $nombre === 'role_user') {
+            return 1;
+        }
+
+        return 0;
+    }
+
     /** @return Collection<int, Usuario> */
     public function getUsuarios(): Collection { return $this->usuarios; }
 
