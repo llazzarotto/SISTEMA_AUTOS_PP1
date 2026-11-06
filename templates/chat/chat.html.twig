@@ -7,6 +7,8 @@
 {% endblock %}
 
 {% block content %}
+<section class="section chat-page">
+    <div class="container">
 <div class="chat-container">
     {# Excepción E1 y RN1: Cliente No Autenticado #}
     {% if not usuario %}
@@ -83,6 +85,8 @@
         {% endif %}
     {% endif %}
 </div>
+    </div>
+</section>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

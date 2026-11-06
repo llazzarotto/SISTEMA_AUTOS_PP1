@@ -19,13 +19,13 @@
     {% include "header.html.twig" %}
 
     <main id="contenido-principal">
-        <div class="container flash-container" aria-live="polite">
-            {% for tipo, mensajes in app.flashes %}
+        {% for tipo, mensajes in app.flashes %}
+            <div class="container flash-container" aria-live="polite">
                 {% for mensaje in mensajes %}
                     <div class="flash flash-{{ tipo }}" role="status">{{ mensaje }}</div>
                 {% endfor %}
-            {% endfor %}
-        </div>
+            </div>
+        {% endfor %}
         {% block content %}{% endblock %}
     </main>
 
