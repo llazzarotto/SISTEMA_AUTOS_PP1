@@ -3,7 +3,6 @@
 namespace App\Tests\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
-use Symfony\Component\HttpFoundation\Response;
 
 final class ReservaControllerTest extends WebTestCase
 {
@@ -12,7 +11,7 @@ final class ReservaControllerTest extends WebTestCase
         $cliente = static::createClient();
         $cliente->request('GET', '/reservas');
 
-        self::assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
+        self::assertResponseRedirects('/login');
     }
 
     public function testLaCreacionDeReservaTambienQuedaProtegida(): void
@@ -20,6 +19,6 @@ final class ReservaControllerTest extends WebTestCase
         $cliente = static::createClient();
         $cliente->request('GET', '/reservas/nueva');
 
-        self::assertResponseStatusCodeSame(Response::HTTP_UNAUTHORIZED);
+        self::assertResponseRedirects('/login');
     }
 }
