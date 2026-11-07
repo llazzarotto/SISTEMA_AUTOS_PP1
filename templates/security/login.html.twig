@@ -19,6 +19,9 @@
                 <label for="password">Contraseña</label>
                 <input type="password" id="password" name="_password" autocomplete="current-password" required maxlength="4096">
             </div>
+            {% if app.request.query.get('redirect') %}
+                <input type="hidden" name="_target_path" value="{{ app.request.query.get('redirect') }}">
+            {% endif %}
             <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
             <button type="submit" class="btn btn-primary">Ingresar</button>
         </form>

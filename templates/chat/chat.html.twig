@@ -1,0 +1,176 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Atención al Cliente | Luxury Cars{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ app.request.basePath }}/assets/css/chat.css">
+{% endblock %}
+
+{% block content %}
+<section class="section chat-page">
+    <div class="container">
+<div class="chat-container">
+    {# Excepción E1 y RN1: Cliente No Autenticado #}
+    {% if not usuario %}
+        <div class="alert alert-warning">
+            Para iniciar una sesión de chat, debe ingresar al sistema.
+            <a href="{{ path('app_login', {redirect: app.request.requestUri}) }}" class="btn btn-sm btn-primary">Ir a Autenticarse</a>
+        </div>
+    {% else %}
+        <div class="chat-header">
+            <div class="chat-title">
+                <h2>Atención al Cliente</h2>
+                {% if asesoresDisponibles %}
+                    <span class="status online">Operadores en línea</span>
+                {% else %}
+                    <span class="status offline">Atención Offline</span>
+                {% endif %}
+            </div>
+            <div class="chat-user-info">
+                <span>Conectado como: <strong>{{ usuario.nombre ?: usuario.email }}</strong></span>
+            </div>
+        </div>
+
+        {# FA01 y FA02 / RN2: Asociación de Contexto (Auto o Simulación) #}
+        {% if contexto %}
+            <div class="chat-context">
+                <h4>Contexto de la consulta:</h4>
+                {% if contexto.auto %}
+                    <p>Vehículo consultado: <strong>{{ contexto.auto.modelo.marca.nombre }} {{ contexto.auto.modelo.nombre }}</strong> (Precio: ${{ contexto.auto.precio|number_format(0, ',', '.') }})</p>
+                {% endif %}
+                {% if contexto.simulacion %}
+                    <p>Simulación vinculada: <strong>{{ contexto.simulacion.cantidadCuotas }} cuotas</strong> (Capital a financiar: ${{ contexto.simulacion.capitalFinanciar|number_format(2, ',', '.') }})</p>
+                {% endif %}
+                <small class="nota-rn3">Fines informativos. No procesa pagos ni reservas definitivas.</small>
+            </div>
+        {% endif %}
+
+        {% if asesoresDisponibles %}
+            {# Flujo Básico: Chat en tiempo real #}
+            <div class="chat-messages" id="historialChat">
+                <div class="message system">
+                    Bienvenido al centro de atención. Un asesor leerá su mensaje en breve.
+                </div>
+                {# Mensajes previos asociados a la entidad Consulta #}
+                {% for consulta in consultas %}
+                    <div class="message {{ consulta.rol == 'ROL_CLIENTE' ? 'message-cliente' : 'message-asesor' }}">
+                        {{ consulta.texto }}
+                    </div>
+                {% endfor %}
+            </div>
+
+            <form id="formChat" class="chat-input-area" method="post" action="{{ path('app_chat_enviar') }}"
+                  data-auto-id="{{ contexto and contexto.auto ? contexto.auto.id : '' }}"
+                  data-simulacion-id="{{ simulacionId|default('') }}">
+                <input type="hidden" name="autoId" value="{{ contexto and contexto.auto ? contexto.auto.id : '' }}">
+                <input type="hidden" name="simulacionId" value="{{ simulacionId|default('') }}">
+                <input type="text" id="inputMensaje" name="mensaje" class="form-control" placeholder="Redacte su consulta aquí..." required autocomplete="off">
+                <button type="submit" id="btnEnviarMensaje" class="btn btn-primary">Enviar</button>
+            </form>
+        {% else %}
+            {# Excepción E2: No hay personal de atención disponible #}
+            <form id="formMensajeOffline" class="offline-form" method="post" action="{{ path('app_chat_enviar') }}">
+                <div class="alert alert-info">
+                    No hay personal de atención disponible en el momento. Por favor, deje su mensaje y un administrador le responderá a la brevedad por correo.
+                </div>
+                <input type="hidden" name="offline" value="1">
+                <input type="hidden" name="autoId" value="{{ contexto and contexto.auto ? contexto.auto.id : '' }}">
+                <input type="hidden" name="simulacionId" value="{{ simulacionId|default('') }}">
+                <div class="form-group">
+                    <label for="mensajeOffline">Su consulta:</label>
+                    <textarea id="mensajeOffline" name="mensajeOffline" class="form-control" rows="4" placeholder="Escriba su consulta detallada..." required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Dejar mensaje offline</button>
+            </form>
+        {% endif %}
+    {% endif %}
+</div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const formChat = document.getElementById('formChat');
+    const inputMensaje = document.getElementById('inputMensaje');
+    const historialChat = document.getElementById('historialChat');
+
+    // Constantes respetando UPPER_SNAKE_CASE
+    const ROL_CLIENTE = 'ROL_CLIENTE';
+    const ROL_ADMIN = 'ROL_ADMIN';
+    const ESTADO_CONECTADO = 'CONECTADO';
+    const RUTA_ENVIAR = '{{ path('app_chat_enviar') }}';
+
+    if (formChat) {
+        formChat.addEventListener('submit', function(event) {
+            event.preventDefault();
+            enviarMensaje();
+        });
+    }
+
+    // Métodos respetando camelCase
+    async function enviarMensaje() {
+        const textoMensaje = inputMensaje.value.trim();
+        if (!textoMensaje) return;
+
+        const autoId = formChat.dataset.autoId || '';
+        const simulacionId = formChat.dataset.simulacionId || '';
+
+        // Mostrar mensaje del cliente en la UI inmediatamente (RNF - Tiempo real)
+        agregarMensajeAlHistorial(textoMensaje, ROL_CLIENTE);
+        inputMensaje.value = '';
+
+        let textoRespuesta = 'Hemos recibido su mensaje. El administrador está revisando el contexto de su vehículo o simulación.';
+
+        try {
+            const respuesta = await fetch(RUTA_ENVIAR, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    mensaje: textoMensaje,
+                    autoId: autoId,
+                    simulacionId: simulacionId
+                })
+            });
+
+            if (respuesta.ok) {
+                const datos = await respuesta.json();
+                if (datos.respuesta) {
+                    textoRespuesta = datos.respuesta;
+                }
+            }
+        } catch (e) {
+            // Se muestra la respuesta automática aunque falle la petición asíncrona
+        }
+
+        setTimeout(() => {
+            recibirMensajeDelAdministrador(textoRespuesta);
+        }, 600);
+    }
+
+    function recibirMensajeDelAdministrador(textoRespuesta) {
+        agregarMensajeAlHistorial(textoRespuesta, ROL_ADMIN);
+    }
+
+    function agregarMensajeAlHistorial(texto, rolUsuario) {
+        const divMensaje = document.createElement('div');
+        divMensaje.classList.add('message');
+        
+        if (rolUsuario === ROL_CLIENTE) {
+            divMensaje.classList.add('message-cliente');
+        } else {
+            divMensaje.classList.add('message-asesor');
+        }
+        
+        divMensaje.textContent = texto;
+        historialChat.appendChild(divMensaje);
+        
+        // Auto-scroll al fondo
+        historialChat.scrollTop = historialChat.scrollHeight;
+    }
+});
+</script>
+{% endblock %}
+
