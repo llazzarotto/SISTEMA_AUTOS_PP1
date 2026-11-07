@@ -4,10 +4,10 @@ namespace App\Controller;
 
 use App\Entity\Cita;
 use App\Entity\Usuario;
+use App\Manager\ReservaManager;
 use App\Repository\AutoRepository;
 use App\Repository\CitaRepository;
 use App\Service\DisponibilidadCitaService;
-use App\Service\ReservaCitaService;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -150,7 +150,7 @@ final class ReservaController extends AbstractController
         Request $request,
         AutoRepository $autos,
         DisponibilidadCitaService $disponibilidad,
-        ReservaCitaService $reservas,
+        ReservaManager $reservas,
     ): Response {
         $usuario = $this->requireCliente();
         $borrador = $this->obtenerBorrador($request, true);
@@ -234,7 +234,7 @@ final class ReservaController extends AbstractController
         Cita $cita,
         Request $request,
         DisponibilidadCitaService $disponibilidad,
-        ReservaCitaService $reservas,
+        ReservaManager $reservas,
     ): Response {
         $this->comprobarPropietario($cita);
 
@@ -254,7 +254,7 @@ final class ReservaController extends AbstractController
             try {
                 $nuevaFechaHora = $disponibilidad->crearFechaHora($fechaSeleccionada, (string) $request->request->get('hora'));
                 $reservas->reprogramar($cita, $nuevaFechaHora);
-                $this->addFlash('success', sprintf('La cita fue reprogramada. La actualizacion se mostraria para %s.', $cita->getUsuario()?->getEmail()));
+                $this->addFlash('success', 'La cita fue reprogramada correctamente.');
 
                 return $this->redirectToRoute('app_reservas_detalle', ['id' => $cita->getId()]);
             } catch (UniqueConstraintViolationException|\DomainException $error) {
@@ -279,7 +279,7 @@ final class ReservaController extends AbstractController
     }
 
     #[Route('/{id}/cancelar', name: 'cancelar', requirements: ['id' => '\\d+'], methods: ['GET', 'POST'])]
-    public function cancelar(Cita $cita, Request $request, ReservaCitaService $reservas): Response
+    public function cancelar(Cita $cita, Request $request, ReservaManager $reservas): Response
     {
         $this->comprobarPropietario($cita);
 
@@ -290,7 +290,7 @@ final class ReservaController extends AbstractController
 
             try {
                 $reservas->cancelar($cita);
-                $this->addFlash('success', sprintf('La cita fue cancelada. La confirmacion se mostraria para %s.', $cita->getUsuario()?->getEmail()));
+                $this->addFlash('success', 'La cita fue cancelada correctamente.');
 
                 return $this->redirectToRoute('app_reservas_detalle', ['id' => $cita->getId()]);
             } catch (\DomainException $error) {
@@ -302,7 +302,7 @@ final class ReservaController extends AbstractController
     }
 
     #[Route('/{id}', name: 'detalle', requirements: ['id' => '\\d+'], methods: ['GET'])]
-    public function detalle(Cita $cita, Request $request, ReservaCitaService $reservas): Response
+    public function detalle(Cita $cita, Request $request, ReservaManager $reservas): Response
     {
         $this->comprobarPropietario($cita);
 
@@ -316,9 +316,9 @@ final class ReservaController extends AbstractController
     private function requireCliente(): Usuario
     {
         $usuario = $this->getUser();
-        if (!$usuario instanceof Usuario) {
+        if (!$usuario instanceof Usuario || $usuario->getRol()?->getNivel() !== 1) {
             throw $this->createAccessDeniedException(
-                'CU05 requiere un Usuario autenticado. Quedara conectado automaticamente cuando CU01 integre Usuario con Symfony Security.',
+                'Para gestionar tus citas, inicia sesión con una cuenta de cliente.',
             );
         }
 

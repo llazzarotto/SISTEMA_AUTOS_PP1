@@ -1,14 +1,15 @@
 <?php
 
-namespace App\Service;
+namespace App\Manager;
 
 use App\Entity\Auto;
 use App\Entity\Cita;
 use App\Entity\Usuario;
+use App\Service\DisponibilidadCitaService;
 use App\Repository\CitaRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
-class ReservaCitaService
+final class ReservaManager
 {
     public const MAXIMO_CITAS_PENDIENTES = 2;
 

@@ -16,7 +16,7 @@
                 <div><dt>Horario</dt><dd>{{ fechaHora|date('H:i') }} hs</dd></div>
                 {% if borrador.observaciones %}<div><dt>Observaciones</dt><dd>{{ borrador.observaciones }}</dd></div>{% endif %}
             </dl>
-            <div class="info-box">La cita quedara pendiente hasta que el concesionario la confirme. El comprobante demostrativo se dirigira a <strong>{{ usuario.email }}</strong>.</div>
+            <div class="info-box">La solicitud quedará pendiente hasta que el concesionario la confirme.</div>
             <form method="post" class="form-actions">
                 <input type="hidden" name="_token" value="{{ csrf_token('confirmar_reserva') }}">
                 <a class="btn btn-outline" href="{{ path('app_reservas_horario') }}">Volver</a>

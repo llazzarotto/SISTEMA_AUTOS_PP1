@@ -6,11 +6,11 @@ use App\Entity\Cita;
 use App\Entity\Usuario;
 use App\Repository\CitaRepository;
 use App\Service\DisponibilidadCitaService;
-use App\Service\ReservaCitaService;
+use App\Manager\ReservaManager;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 
-final class ReservaCitaServiceTest extends TestCase
+final class ReservaManagerTest extends TestCase
 {
     public function testRegistraUnaCitaPendienteParaElUsuario(): void
     {
@@ -21,7 +21,7 @@ final class ReservaCitaServiceTest extends TestCase
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $entityManager->expects(self::once())->method('persist')->with(self::isInstanceOf(Cita::class));
         $entityManager->expects(self::once())->method('flush');
-        $servicio = new ReservaCitaService($repositorio, $disponibilidad, $entityManager);
+        $servicio = new ReservaManager($repositorio, $disponibilidad, $entityManager);
         $usuario = (new Usuario())->setEmail('cliente@ejemplo.com');
         $fechaHora = new \DateTimeImmutable('2026-11-03 08:30:00');
 
@@ -40,7 +40,7 @@ final class ReservaCitaServiceTest extends TestCase
         $disponibilidad = $this->createStub(DisponibilidadCitaService::class);
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $entityManager->expects(self::never())->method('persist');
-        $servicio = new ReservaCitaService($repositorio, $disponibilidad, $entityManager);
+        $servicio = new ReservaManager($repositorio, $disponibilidad, $entityManager);
 
         $this->expectException(\DomainException::class);
         $servicio->reservar(new Usuario(), Cita::SERVICIO_TEST_DRIVE, null, new \DateTimeImmutable('+3 days'));
@@ -52,7 +52,7 @@ final class ReservaCitaServiceTest extends TestCase
         $disponibilidad = $this->createStub(DisponibilidadCitaService::class);
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $entityManager->expects(self::once())->method('flush');
-        $servicio = new ReservaCitaService($repositorio, $disponibilidad, $entityManager);
+        $servicio = new ReservaManager($repositorio, $disponibilidad, $entityManager);
         $cita = (new Cita())
             ->setTipoServicio(Cita::SERVICIO_TEST_DRIVE)
             ->setFechaHora(new \DateTimeImmutable('2026-11-05 08:30:00'));
@@ -69,7 +69,7 @@ final class ReservaCitaServiceTest extends TestCase
         $disponibilidad = $this->createStub(DisponibilidadCitaService::class);
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $entityManager->expects(self::never())->method('flush');
-        $servicio = new ReservaCitaService($repositorio, $disponibilidad, $entityManager);
+        $servicio = new ReservaManager($repositorio, $disponibilidad, $entityManager);
         $cita = (new Cita())
             ->setTipoServicio(Cita::SERVICIO_TEST_DRIVE)
             ->setFechaHora(new \DateTimeImmutable('2026-11-03 08:30:00'));
@@ -85,7 +85,7 @@ final class ReservaCitaServiceTest extends TestCase
         $disponibilidad->method('esHorarioDisponible')->willReturn(true);
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $entityManager->expects(self::once())->method('flush');
-        $servicio = new ReservaCitaService($repositorio, $disponibilidad, $entityManager);
+        $servicio = new ReservaManager($repositorio, $disponibilidad, $entityManager);
         $cita = (new Cita())
             ->setTipoServicio(Cita::SERVICIO_ASESORAMIENTO_SALON)
             ->setFechaHora(new \DateTimeImmutable('2026-11-05 08:30:00'));
