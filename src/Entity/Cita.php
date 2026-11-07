@@ -11,6 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 class Cita
 {
     public const SERVICIO_TEST_DRIVE = 'Test Drive';
+    public const SERVICIO_MANTENIMIENTO = 'Mantenimiento';
     public const SERVICIO_ASESORAMIENTO_SALON = 'Asesoramiento en salon';
     public const SERVICIO_ASESOR_FINANCIERO = 'Asesor financiero';
 
@@ -21,6 +22,7 @@ class Cita
 
     public const SERVICIOS = [
         self::SERVICIO_TEST_DRIVE,
+        self::SERVICIO_MANTENIMIENTO,
         self::SERVICIO_ASESORAMIENTO_SALON,
         self::SERVICIO_ASESOR_FINANCIERO,
     ];

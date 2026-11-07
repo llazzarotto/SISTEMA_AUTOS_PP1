@@ -8,6 +8,7 @@ use App\Manager\ReservaManager;
 use App\Repository\AutoRepository;
 use App\Repository\CitaRepository;
 use App\Service\DisponibilidadCitaService;
+use App\Service\NotificacionCitaService;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -151,6 +152,7 @@ final class ReservaController extends AbstractController
         AutoRepository $autos,
         DisponibilidadCitaService $disponibilidad,
         ReservaManager $reservas,
+        NotificacionCitaService $notificaciones,
     ): Response {
         $usuario = $this->requireCliente();
         $borrador = $this->obtenerBorrador($request, true);
@@ -174,6 +176,7 @@ final class ReservaController extends AbstractController
                     $fechaHora,
                     $borrador['observaciones'] ?: null,
                 );
+                $notificaciones->enviar($cita, 'reservada');
                 $request->getSession()->remove(self::BORRADOR_SESSION);
 
                 return $this->redirectToRoute('app_reservas_detalle', ['id' => $cita->getId(), 'registrada' => 1]);
@@ -235,6 +238,7 @@ final class ReservaController extends AbstractController
         Request $request,
         DisponibilidadCitaService $disponibilidad,
         ReservaManager $reservas,
+        NotificacionCitaService $notificaciones,
     ): Response {
         $this->comprobarPropietario($cita);
 
@@ -252,8 +256,10 @@ final class ReservaController extends AbstractController
             }
 
             try {
+                $fechaAnterior = $cita->getFechaHora();
                 $nuevaFechaHora = $disponibilidad->crearFechaHora($fechaSeleccionada, (string) $request->request->get('hora'));
                 $reservas->reprogramar($cita, $nuevaFechaHora);
+                $notificaciones->enviar($cita, 'reprogramada', $fechaAnterior);
                 $this->addFlash('success', 'La cita fue reprogramada correctamente.');
 
                 return $this->redirectToRoute('app_reservas_detalle', ['id' => $cita->getId()]);
@@ -279,7 +285,7 @@ final class ReservaController extends AbstractController
     }
 
     #[Route('/{id}/cancelar', name: 'cancelar', requirements: ['id' => '\\d+'], methods: ['GET', 'POST'])]
-    public function cancelar(Cita $cita, Request $request, ReservaManager $reservas): Response
+    public function cancelar(Cita $cita, Request $request, ReservaManager $reservas, NotificacionCitaService $notificaciones): Response
     {
         $this->comprobarPropietario($cita);
 
@@ -290,6 +296,7 @@ final class ReservaController extends AbstractController
 
             try {
                 $reservas->cancelar($cita);
+                $notificaciones->enviar($cita, 'cancelada');
                 $this->addFlash('success', 'La cita fue cancelada correctamente.');
 
                 return $this->redirectToRoute('app_reservas_detalle', ['id' => $cita->getId()]);
