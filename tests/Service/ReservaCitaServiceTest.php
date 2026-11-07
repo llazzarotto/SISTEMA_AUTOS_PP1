@@ -10,7 +10,7 @@ use App\Manager\ReservaManager;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
 
-final class ReservaManagerTest extends TestCase
+final class ReservaCitaServiceTest extends TestCase
 {
     public function testRegistraUnaCitaPendienteParaElUsuario(): void
     {
