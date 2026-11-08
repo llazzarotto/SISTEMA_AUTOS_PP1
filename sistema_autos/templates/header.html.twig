@@ -1,0 +1,37 @@
+<header class="site-header">
+    <div class="container header-container">
+
+        <a href="{{ path('app_home') }}" class="brand">
+            <span class="brand-icon">LC</span>
+            <span class="brand-name">LUXURY<span>CARS</span></span>
+        </a>
+
+        <nav class="main-navigation">
+            <a href="{{ path('app_home') }}" class="nav-link">Inicio</a>
+            <a href="{{ path('app_auto_index') }}" class="nav-link">Explorar autos</a>
+            <a href="{{ app.request.basePath }}/financiacion" class="nav-link">Financiación</a>
+            <a href="{{ app.request.basePath }}/contacto" class="nav-link">Contacto</a>
+
+            <div class="nav-actions">
+                {% set usuarioActual = usuario|default(app.user) %}
+                {% if usuarioActual %}
+                    <a href="{{ path('app_favorite_index') }}" class="nav-link">Favoritos</a>
+                    <a href="{{ path('app_reservas_index') }}" class="nav-link">Mis citas</a>
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <a href="{{ path('app_usuarios') }}" class="nav-link">Gestión de usuarios</a>
+                    {% endif %}
+                    <form action="{{ path('app_logout') }}" method="post">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('logout') }}">
+                        <button type="submit" class="btn btn-outline">Cerrar sesión</button>
+                    </form>
+                {% else %}
+                    <a href="{{ path('app_login') }}" class="nav-link">Ingresar</a>
+                    <a href="{{ path('app_registro') }}" class="btn btn-primary">
+                        Crear cuenta
+                    </a>
+                {% endif %}
+            </div>
+        </nav>
+
+    </div>
+</header>

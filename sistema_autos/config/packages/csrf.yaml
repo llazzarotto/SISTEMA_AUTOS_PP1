@@ -1,0 +1,8 @@
+# Los formularios Twig usan tokens de sesión sin requerir JavaScript.
+framework:
+    form:
+        csrf_protection:
+            token_id: submit
+
+    csrf_protection:
+        stateless_token_ids: []

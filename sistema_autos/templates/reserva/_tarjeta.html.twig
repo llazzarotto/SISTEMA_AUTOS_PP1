@@ -1,0 +1,24 @@
+<article class="cita-card">
+    <div class="cita-card-top">
+        <div>
+            <span class="cita-service">{{ cita.tipoServicio }}</span>
+            {% if cita.auto %}
+                <p>{{ cita.auto.modelo.marca.nombre }} {{ cita.auto.modelo.nombre }} {{ cita.auto.anio }}</p>
+            {% else %}
+                <p>Sin vehiculo asociado</p>
+            {% endif %}
+        </div>
+        <span class="status status-{{ cita.estado }}">{{ cita.estado|capitalize }}</span>
+    </div>
+    <dl class="cita-meta">
+        <div><dt>Fecha</dt><dd>{{ cita.fechaHora|date('d/m/Y') }}</dd></div>
+        <div><dt>Horario</dt><dd>{{ cita.fechaHora|date('H:i') }} hs</dd></div>
+    </dl>
+    <div class="cita-actions">
+        <a class="btn btn-outline" href="{{ path('app_reservas_detalle', {id: cita.id}) }}">Ver detalle</a>
+        {% if mostrarAcciones %}
+            <a class="text-link" href="{{ path('app_reservas_reprogramar', {id: cita.id}) }}">Reprogramar</a>
+            <a class="text-link text-danger" href="{{ path('app_reservas_cancelar', {id: cita.id}) }}">Cancelar</a>
+        {% endif %}
+    </div>
+</article>

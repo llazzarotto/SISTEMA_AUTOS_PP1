@@ -1,0 +1,16 @@
+{% extends 'cuentas/layout.html.twig' %}
+
+{% block title %}Crear usuario | Luxury Cars{% endblock %}
+
+{% block cuentas_content %}
+    <div class="cuentas-heading">
+        <div>
+            <span class="eyebrow">GESTIÓN DE USUARIOS</span>
+            <h1>Crear usuario</h1>
+            <p>Completá los datos para registrar un usuario.</p>
+        </div>
+    </div>
+    <div class="cuentas-card">
+        {% include 'usuario/_form.html.twig' with {boton: 'Crear usuario', cancelar: path('app_usuarios')} %}
+    </div>
+{% endblock %}

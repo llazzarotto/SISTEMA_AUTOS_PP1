@@ -1,0 +1,18 @@
+{% extends 'cuentas/layout.html.twig' %}
+
+{% block title %}Crear cuenta | Luxury Cars{% endblock %}
+
+{% block cuentas_content %}
+    <div class="cuentas-card cuentas-auth">
+        <span class="eyebrow">LUXURY CARS</span>
+        <h1>Crear cuenta</h1>
+        <p>Completá tus datos para registrarte.</p>
+        {{ form_start(form, {attr: {class: 'cuentas-form'}}) }}
+            {{ form_errors(form) }}
+            {{ form_row(form.email) }}
+            {{ form_row(form.password) }}
+            <button type="submit" class="btn btn-primary">Registrarse</button>
+        {{ form_end(form) }}
+        <p class="cuentas-link">¿Ya tenés cuenta? <a href="{{ path('app_login') }}">Ingresar</a></p>
+    </div>
+{% endblock %}

@@ -1,0 +1,58 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Seleccionar horario | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="section reserva-page">
+    <div class="container reserva-narrow">
+        <div class="stepper" aria-label="Paso 2 de 3"><span class="is-done">1</span><i></i><span class="is-active">2</span><i></i><span>3</span></div>
+        <div class="panel-form">
+            <span class="eyebrow">HORARIOS DISPONIBLES</span>
+            <h1>{{ fecha|date('d/m/Y') }}</h1>
+            <p>La disponibilidad se actualiza automaticamente.</p>
+
+            <form method="post" class="reserva-form">
+                <input type="hidden" name="_token" value="{{ csrf_token('reserva_horario') }}">
+                <div class="time-grid" data-horarios data-fecha="{{ fecha|date('Y-m-d') }}" data-url="{{ path('app_reservas_horarios') }}">
+                    {% for turno in horarios %}
+                        <label class="time-option"><input type="radio" name="hora" value="{{ turno|date('H:i') }}" required><span>{{ turno|date('H:i') }} hs</span></label>
+                    {% else %}
+                        <div class="availability-error">No hay horarios disponibles para esta fecha.</div>
+                    {% endfor %}
+                </div>
+
+                {% if sugerencias %}
+                    <div class="suggestions">
+                        <strong>Fechas cercanas con disponibilidad:</strong>
+                        {% for sugerencia in sugerencias %}
+                            <a href="{{ path('app_reservas_nueva', {fecha: sugerencia|date('Y-m-d')}) }}">{{ sugerencia|date('d/m/Y') }}</a>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="form-actions">
+                    <a class="btn btn-outline" href="{{ path('app_reservas_nueva') }}">Volver</a>
+                    <button class="btn btn-primary" type="submit" {{ horarios is empty ? 'disabled' }}>Continuar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+const contenedor = document.querySelector('[data-horarios]');
+async function actualizarHorarios() {
+    const seleccionado = contenedor.querySelector('input:checked')?.value;
+    const respuesta = await fetch(`${contenedor.dataset.url}?fecha=${contenedor.dataset.fecha}`, {headers: {'Accept': 'application/json'}});
+    if (!respuesta.ok) return;
+    const datos = await respuesta.json();
+    contenedor.innerHTML = datos.horarios.length
+        ? datos.horarios.map((turno) => `<label class="time-option"><input type="radio" name="hora" value="${turno.valor}" required ${seleccionado === turno.valor ? 'checked' : ''}><span>${turno.etiqueta}</span></label>`).join('')
+        : '<div class="availability-error">No quedan horarios disponibles para esta fecha.</div>';
+    document.querySelector('button[type="submit"]').disabled = datos.horarios.length === 0;
+}
+setInterval(actualizarHorarios, 15000);
+</script>
+{% endblock %}
