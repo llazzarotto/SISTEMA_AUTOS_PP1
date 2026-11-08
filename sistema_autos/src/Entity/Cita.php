@@ -17,6 +17,7 @@ class Cita
 
     public const ESTADO_PENDIENTE = 'pendiente';
     public const ESTADO_CONFIRMADA = 'confirmada';
+    public const ESTADO_RECHAZADA = 'rechazada';
     public const ESTADO_CANCELADA = 'cancelada';
     public const ESTADO_COMPLETADA = 'completada';
 
@@ -30,6 +31,7 @@ class Cita
     public const ESTADOS = [
         self::ESTADO_PENDIENTE,
         self::ESTADO_CONFIRMADA,
+        self::ESTADO_RECHAZADA,
         self::ESTADO_CANCELADA,
         self::ESTADO_COMPLETADA,
     ];

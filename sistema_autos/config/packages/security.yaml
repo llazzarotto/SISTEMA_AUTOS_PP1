@@ -31,9 +31,10 @@ security:
                 target: app_login
                 enable_csrf: true
 
-    # La gestión de usuarios requiere el rol de administrador.
+    # La gestión de usuarios y módulos administrativos requiere el rol de administrador.
     access_control:
         - { path: ^/usuarios(?:/|$), roles: ROLE_ADMIN }
+        - { path: ^/admin(?:/|$), roles: ROLE_ADMIN }
 
 when@test:
     security:

@@ -3,9 +3,11 @@
 namespace App\Controller;
 
 use App\Entity\Auto;
+use App\Entity\ImagenAuto;
 use App\Entity\Modelo;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -15,12 +17,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_ADMIN')]
 class InventarioController extends AbstractController
 {
-    private const ESTADOS = [
-        'disponible',
-        'reservado',
-        'vendido',
-        'inactivo',
-    ];
+    public const MAX_IMAGENES = 5;
+    private const EXTENSIONES_PERMITIDAS = ['jpg', 'jpeg', 'png', 'webp'];
 
     #[Route('', name: 'inventario_index', methods: ['GET'])]
     public function index(
@@ -30,7 +28,7 @@ class InventarioController extends AbstractController
         $busqueda = $request->query->get('q');
         $estado = $request->query->get('estado');
 
-        if ($estado !== null && !in_array($estado, self::ESTADOS, true)) {
+        if ($estado !== null && !in_array($estado, Auto::ESTADOS, true)) {
             $estado = null;
         }
 
@@ -56,16 +54,19 @@ class InventarioController extends AbstractController
                 $em->persist($auto);
                 $em->flush();
 
-                $this->addFlash('success', 'El vehículo se registró correctamente.');
+                if ($this->procesarImagenes($request, $auto, $em)) {
+                    $em->flush();
+                    $this->addFlash('success', 'El vehículo se registró correctamente.');
 
-                return $this->redirectToRoute('inventario_index');
+                    return $this->redirectToRoute('inventario_index');
+                }
             }
         }
 
         return $this->render('inventario/nuevo.html.twig', [
             'auto' => $auto,
             'modelos' => $em->getRepository(Modelo::class)->findBy([], ['nombre' => 'ASC']),
-            'estados' => self::ESTADOS,
+            'estados' => Auto::ESTADOS,
         ]);
     }
 
@@ -76,7 +77,7 @@ class InventarioController extends AbstractController
         EntityManagerInterface $em
     ): Response {
         if ($request->isMethod('POST')) {
-            if ($this->cargarDatosAuto($request, $auto, $em)) {
+            if ($this->cargarDatosAuto($request, $auto, $em) && $this->procesarImagenes($request, $auto, $em)) {
                 $em->flush();
 
                 $this->addFlash('success', 'El vehículo se actualizó correctamente.');
@@ -88,7 +89,7 @@ class InventarioController extends AbstractController
         return $this->render('inventario/editar.html.twig', [
             'auto' => $auto,
             'modelos' => $em->getRepository(Modelo::class)->findBy([], ['nombre' => 'ASC']),
-            'estados' => self::ESTADOS,
+            'estados' => Auto::ESTADOS,
         ]);
     }
 
@@ -105,7 +106,7 @@ class InventarioController extends AbstractController
             throw $this->createAccessDeniedException('Token inválido.');
         }
 
-        $auto->setEstado('inactivo');
+        $auto->setEstado(Auto::ESTADO_INACTIVO);
         $em->flush();
 
         $this->addFlash('success', 'El vehículo fue dado de baja del inventario.');
@@ -118,11 +119,15 @@ class InventarioController extends AbstractController
         Auto $auto,
         EntityManagerInterface $em
     ): bool {
+        if ($request->request->has('_token') && !$this->isCsrfTokenValid('inventario_auto', (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Token inválido.');
+        }
+
         $modeloId = $request->request->get('modelo');
         $anio = $request->request->get('anio');
         $kilometraje = $request->request->get('kilometraje');
         $precio = $request->request->get('precio');
-        $estado = $request->request->get('estado');
+        $estado = strtolower(trim((string) $request->request->get('estado')));
         $descripcion = $request->request->get('descripcion');
 
         if (
@@ -130,7 +135,7 @@ class InventarioController extends AbstractController
             !is_numeric($anio) ||
             !is_numeric($kilometraje) ||
             !is_numeric($precio) ||
-            !in_array($estado, self::ESTADOS, true)
+            !in_array($estado, Auto::ESTADOS, true)
         ) {
             $this->addFlash('danger', 'Completá correctamente todos los campos.');
             return false;
@@ -159,6 +164,80 @@ class InventarioController extends AbstractController
         $auto->setPrecio((int) $precio);
         $auto->setEstado($estado);
         $auto->setDescripcion($descripcion !== null ? trim($descripcion) : null);
+
+        return true;
+    }
+
+    private function procesarImagenes(
+        Request $request,
+        Auto $auto,
+        EntityManagerInterface $em
+    ): bool {
+        // 1. Eliminar imágenes marcadas para quitar
+        $idsEliminar = $request->request->all('eliminar_imagenes');
+        if ($idsEliminar !== []) {
+            $idsEliminarInt = array_map('intval', $idsEliminar);
+            foreach ($auto->getImagenes()->toArray() as $imagenExistente) {
+                if (in_array($imagenExistente->getId(), $idsEliminarInt, true)) {
+                    $auto->removeImagen($imagenExistente);
+                    $em->remove($imagenExistente);
+                }
+            }
+        }
+
+        // 2. Procesar nuevos archivos subidos (máximo 5 en total)
+        /** @var list<UploadedFile|null> $archivos */
+        $archivos = array_values(array_filter(
+            (array) $request->files->get('imagenes', []),
+            static fn (mixed $archivo): bool => $archivo instanceof UploadedFile && $archivo->getError() !== \UPLOAD_ERR_NO_FILE
+        ));
+
+        if ($archivos === []) {
+            return true;
+        }
+
+        $totalFinal = $auto->getImagenes()->count() + count($archivos);
+        if ($totalFinal > self::MAX_IMAGENES) {
+            $this->addFlash('error', sprintf('Podés cargar hasta un máximo de %d imágenes por vehículo.', self::MAX_IMAGENES));
+            return false;
+        }
+
+        $directorioDestino = $this->getParameter('kernel.project_dir') . '/public/assets/img';
+        if (!is_dir($directorioDestino)) {
+            mkdir($directorioDestino, 0775, true);
+        }
+
+        $indice = $auto->getImagenes()->count() + 1;
+        foreach ($archivos as $archivo) {
+            if (!$archivo->isValid()) {
+                $this->addFlash('error', 'Uno de los archivos de imagen no se pudo subir correctamente.');
+                return false;
+            }
+
+            $extension = strtolower($archivo->getClientOriginalExtension() ?: ($archivo->guessExtension() ?? 'jpg'));
+            if (!in_array($extension, self::EXTENSIONES_PERMITIDAS, true)) {
+                $this->addFlash('error', 'Formato de imagen no válido. Usá JPG, JPEG, PNG o WEBP.');
+                return false;
+            }
+
+            $nombreArchivo = sprintf(
+                'auto%d_%d_%s.%s',
+                $auto->getId() ?? 0,
+                $indice,
+                bin2hex(random_bytes(3)),
+                $extension
+            );
+
+            $archivo->move($directorioDestino, $nombreArchivo);
+
+            $imagenAuto = (new ImagenAuto())
+                ->setRuta('assets/img/' . $nombreArchivo)
+                ->setAuto($auto);
+
+            $auto->addImagen($imagenAuto);
+            $em->persist($imagenAuto);
+            ++$indice;
+        }
 
         return true;
     }

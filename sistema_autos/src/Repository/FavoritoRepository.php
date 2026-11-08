@@ -6,7 +6,6 @@ use App\Entity\Favorito;
 use App\Entity\Usuario;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use SortDirection;
 
 /**
  * @extends ServiceEntityRepository<Favorito>
@@ -29,7 +28,7 @@ class FavoritoRepository extends ServiceEntityRepository
             ->leftJoin('auto.imagenes', 'imagenes')
             ->andWhere('f.usuario = :usuario')
             ->setParameter('usuario', $usuario)
-            ->orderBy('f.fechaCreacion', SortDirection::Descending)
+            ->orderBy('f.fechaCreacion', 'DESC')
             ->distinct()
             ->getQuery()
             ->getResult();

@@ -45,7 +45,7 @@ final class UsuarioController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid() && $this->validarEmail($form, $usuario)) {
             try {
-                $this->usuarioManager->crear($usuario, $this->getUser(), $form->get('password')->getData());
+                $this->usuarioManager->crear($usuario, $this->administradorActual(), $form->get('password')->getData());
                 $this->addFlash('success', 'Usuario creado correctamente.');
 
                 return $this->redirectToRoute('app_usuarios');
@@ -64,7 +64,7 @@ final class UsuarioController extends AbstractController
 
         return $this->render('usuario/show.html.twig', [
             'usuarioDetalle' => $usuario,
-            'puedeGestionar' => $this->usuarioManager->puedeGestionar($usuario, $this->getUser()),
+            'puedeGestionar' => $this->usuarioManager->puedeGestionar($usuario, $this->administradorActual()),
         ]);
     }
 
@@ -78,7 +78,7 @@ final class UsuarioController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid() && $this->validarEmail($form, $usuario)) {
             try {
-                $this->usuarioManager->modificar($usuario, $this->getUser());
+                $this->usuarioManager->modificar($usuario, $this->administradorActual());
                 $this->addFlash('success', 'Los datos fueron modificados correctamente.');
 
                 return $this->redirectToRoute('app_usuarios');
@@ -108,7 +108,7 @@ final class UsuarioController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->usuarioManager->eliminar($usuario, $this->getUser(), $form->get('razon')->getData());
+            $this->usuarioManager->eliminar($usuario, $this->administradorActual(), $form->get('razon')->getData());
             $this->addFlash('success', 'El usuario y sus registros relacionados fueron eliminados.');
 
             return $this->redirectToRoute('app_usuarios');
@@ -120,7 +120,7 @@ final class UsuarioController extends AbstractController
     private function crearFormulario(Usuario $usuario, bool $esNuevo = false): FormInterface
     {
         return $this->createForm(UsuarioType::class, $usuario, [
-            'roles_permitidos' => $this->usuarioManager->obtenerRolesPermitidos($this->getUser()),
+            'roles_permitidos' => $this->usuarioManager->obtenerRolesPermitidos($this->administradorActual()),
             'es_nuevo' => $esNuevo,
         ]);
     }
@@ -148,8 +148,18 @@ final class UsuarioController extends AbstractController
 
     private function comprobarPermiso(Usuario $usuario): void
     {
-        if (!$this->usuarioManager->puedeGestionar($usuario, $this->getUser())) {
+        if (!$this->usuarioManager->puedeGestionar($usuario, $this->administradorActual())) {
             throw $this->createAccessDeniedException('No podés gestionar un usuario con un rol superior al tuyo.');
         }
+    }
+
+    private function administradorActual(): Usuario
+    {
+        $usuario = $this->getUser();
+        if (!$usuario instanceof Usuario) {
+            throw $this->createAccessDeniedException('Debés iniciar sesión como administrador.');
+        }
+
+        return $usuario;
     }
 }

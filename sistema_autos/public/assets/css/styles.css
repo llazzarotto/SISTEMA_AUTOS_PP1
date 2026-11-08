@@ -124,6 +124,24 @@ a:focus-visible {
     font-size: 24px;
     font-weight: 900;
     border-radius: 8px;
+    overflow: hidden;
+}
+
+.brand-logo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.hero-logo-img {
+    max-width: 220px;
+    max-height: 180px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    margin: 12px auto;
 }
 
 .brand-name {
@@ -514,16 +532,30 @@ a:focus-visible {
 .main-navigation {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 20px;
+    flex: 1;
+}
+
+.nav-link {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+    line-height: 1;
 }
 
 .nav-actions {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: 16px;
     margin-left: auto;
+}
+
+.logout-form {
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
 }
 
 @media (max-width: 900px) {
@@ -869,15 +901,32 @@ a:focus-visible {
 
 .image-thumbnails {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 10px;
-    margin-top: 10px;
+    margin-top: 12px;
+}
+
+.thumbnail-btn {
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color var(--transition), transform var(--transition);
+}
+
+.thumbnail-btn:hover,
+.thumbnail-btn.is-active {
+    border-color: var(--red);
+    transform: translateY(-2px);
 }
 
 .image-thumbnails img {
+    display: block;
     width: 100%;
     aspect-ratio: 4 / 3;
-    border-radius: 8px;
+    border-radius: 6px;
     object-fit: cover;
 }
 

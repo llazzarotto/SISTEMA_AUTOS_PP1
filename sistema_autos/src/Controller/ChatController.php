@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Auto;
+use App\Entity\Consulta;
 use App\Entity\Usuario;
 use App\Manager\ChatManager;
 use App\Repository\AutoRepository;
@@ -10,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class ChatController extends AbstractController
 {
@@ -24,6 +26,27 @@ final class ChatController extends AbstractController
     public function index(Request $request): Response
     {
         return $this->renderChat($request, null);
+    }
+
+    #[Route('/chat/{id}/responder', name: 'app_chat_responder', requirements: ['id' => '\d+'], methods: ['POST'])]
+    #[IsGranted('ROLE_ADMIN')]
+    public function responder(Consulta $consulta, Request $request): Response
+    {
+        if (!$this->isCsrfTokenValid('responder_consulta_'.$consulta->getId(), $request->request->getString('_token'))) {
+            throw $this->createAccessDeniedException('Token de seguridad inválido.');
+        }
+
+        $respuesta = trim($request->request->getString('respuesta'));
+        if ($respuesta === '') {
+            $this->addFlash('error', 'La respuesta no puede estar vacía.');
+
+            return $this->redirectToRoute('app_chat');
+        }
+
+        $this->chatManager->responderConsulta($consulta, $respuesta);
+        $this->addFlash('success', 'Respuesta enviada correctamente al cliente.');
+
+        return $this->redirectToRoute('app_chat');
     }
 
     #[Route('/chat/enviar', name: 'app_chat_enviar', methods: ['POST'])]
@@ -123,15 +146,20 @@ final class ChatController extends AbstractController
         $asesoresDisponibles = !$request->query->getBoolean('offline', false);
         $contexto = null;
         $consultas = [];
+        $consultasAdmin = [];
 
         if ($usuario !== null) {
-            $contexto = $this->chatManager->obtenerContexto($request, $simulacionId);
-            $autoContexto = $contexto['auto'] ?? null;
-            $consultas = $this->chatManager->obtenerHistorialMensajes(
-                $request->getSession(),
-                $usuario,
-                $autoContexto instanceof Auto ? $autoContexto : null,
-            );
+            if ($this->isGranted('ROLE_ADMIN')) {
+                $consultasAdmin = $this->chatManager->obtenerConsultasParaAdmin();
+            } else {
+                $contexto = $this->chatManager->obtenerContexto($request, $simulacionId);
+                $autoContexto = $contexto['auto'] ?? null;
+                $consultas = $this->chatManager->obtenerHistorialMensajes(
+                    $request->getSession(),
+                    $usuario,
+                    $autoContexto instanceof Auto ? $autoContexto : null,
+                );
+            }
         }
 
         return $this->render('chat/chat.html.twig', [
@@ -139,6 +167,7 @@ final class ChatController extends AbstractController
             'asesoresDisponibles' => $asesoresDisponibles,
             'contexto' => $contexto,
             'consultas' => $consultas,
+            'consultasAdmin' => $consultasAdmin,
             'simulacionId' => $simulacionId,
         ]);
     }
@@ -150,4 +179,3 @@ final class ChatController extends AbstractController
         return $usuario instanceof Usuario ? $usuario : null;
     }
 }
-

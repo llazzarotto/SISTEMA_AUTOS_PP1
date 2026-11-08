@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Registrar vehículo | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="section cuentas-section">
+    <div class="container">
+        <div class="cuentas-heading">
+            <div>
+                <span class="eyebrow">INVENTARIO</span>
+                <h1>Registrar vehículo</h1>
+                <p>Completá los datos técnicos y comerciales de la nueva unidad.</p>
+            </div>
+            <a href="{{ path('inventario_index') }}" class="btn btn-outline">← Volver al inventario</a>
+        </div>
+
+        <div class="cuentas-card cuentas-editor">
+            {% include 'inventario/_form.html.twig' with {
+                auto: auto,
+                modelos: modelos,
+                estados: estados,
+                ruta: path('inventario_nuevo')
+            } %}
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Editar vehículo #{{ auto.id }} | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="section cuentas-section">
+    <div class="container">
+        <div class="cuentas-heading">
+            <div>
+                <span class="eyebrow">INVENTARIO</span>
+                <h1>Editar vehículo #{{ auto.id }}</h1>
+                <p>{{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }} ({{ auto.anio }})</p>
+            </div>
+            <a href="{{ path('inventario_index') }}" class="btn btn-outline">← Volver al inventario</a>
+        </div>
+
+        <div class="cuentas-card cuentas-editor">
+            {% include 'inventario/_form.html.twig' with {
+                auto: auto,
+                modelos: modelos,
+                estados: estados,
+                ruta: path('inventario_editar', {id: auto.id})
+            } %}
+        </div>
+    </div>
+</section>
+{% endblock %}

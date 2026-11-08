@@ -1,0 +1,131 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Citas | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="section cuentas-section">
+    <div class="container">
+        <div class="cuentas-heading">
+            <div>
+                <span class="eyebrow">ADMINISTRACIÓN</span>
+                <h1>Agenda de citas</h1>
+                <p>Administrá las solicitudes de turnos, test drives y asesoramiento de los clientes.</p>
+            </div>
+        </div>
+
+        <form class="catalog-filters" method="GET" action="{{ path('citas_admin') }}">
+            <div class="filter-grid" style="grid-template-columns: 1fr auto; align-items: end; padding-top: 0;">
+                <div>
+                    <label for="estado">Filtrar por estado</label>
+                    <select name="estado" id="estado">
+                        <option value="">Todos los estados</option>
+                        {% for estado in estados %}
+                            <option
+                                value="{{ estado }}"
+                                {% if estadoSeleccionado == estado %}selected{% endif %}
+                            >
+                                {{ estado|capitalize }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-actions" style="margin-top: 0;">
+                    <button type="submit" class="btn btn-primary">Filtrar</button>
+                    <a href="{{ path('citas_admin') }}" class="btn btn-outline">Limpiar filtros</a>
+                </div>
+            </div>
+        </form>
+
+        {% if citas is empty %}
+            <div class="empty-state">
+                <span aria-hidden="true">📅</span>
+                <h2>No hay citas registradas</h2>
+                <p>No se encontraron turnos para el criterio seleccionado.</p>
+                {% if estadoSeleccionado %}
+                    <a href="{{ path('citas_admin') }}" class="btn btn-outline">Ver todas las citas</a>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="cuentas-card cuentas-table-wrapper">
+                <table class="cuentas-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">N.º</th>
+                            <th scope="col">Fecha y hora</th>
+                            <th scope="col">Servicio</th>
+                            <th scope="col">Cliente</th>
+                            <th scope="col">Vehículo</th>
+                            <th scope="col">Observaciones</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col">Actualizar estado</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for cita in citas %}
+                            <tr>
+                                <td>#{{ cita.id }}</td>
+                                <td><strong>{{ cita.fechaHora|date('d/m/Y H:i') }} hs</strong></td>
+                                <td>{{ cita.tipoServicio }}</td>
+                                <td>
+                                    <strong>{{ cita.usuario.nombre ?: 'Cliente' }}</strong><br>
+                                    <small style="color: var(--muted);">{{ cita.usuario.email }}</small>
+                                </td>
+                                <td>
+                                    {% if cita.auto %}
+                                        <a href="{{ path('app_auto_show', {id: cita.auto.id}) }}" class="text-link">
+                                            {{ cita.auto.modelo.marca.nombre }} {{ cita.auto.modelo.nombre }} ({{ cita.auto.anio }})
+                                        </a>
+                                    {% else %}
+                                        <span style="color: var(--muted);">Sin vehículo asociado</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ cita.observaciones ?: 'Sin observaciones' }}</td>
+                                <td>
+                                    <span class="status status-{{ cita.estado }}">
+                                        {{ cita.estado|capitalize }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <form
+                                        method="POST"
+                                        action="{{ path('citas_cambiar_estado', {id: cita.id}) }}"
+                                        class="cuentas-actions"
+                                        style="margin: 0; flex-wrap: nowrap;"
+                                    >
+                                        <input
+                                            type="hidden"
+                                            name="_token"
+                                            value="{{ csrf_token('cambiar_estado_cita_' ~ cita.id) }}"
+                                        >
+
+                                        <select
+                                            name="estado"
+                                            required
+                                            style="min-height: 40px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text);"
+                                        >
+                                            {% for estado in estados %}
+                                                <option
+                                                    value="{{ estado }}"
+                                                    {% if cita.estado == estado %}selected{% endif %}
+                                                >
+                                                    {{ estado|capitalize }}
+                                                </option>
+                                            {% endfor %}
+                                        </select>
+
+                                        <button type="submit" class="btn btn-primary" style="min-height: 40px; padding: 8px 14px;">
+                                            Guardar
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

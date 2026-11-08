@@ -1,0 +1,114 @@
+<form method="POST" action="{{ ruta }}" enctype="multipart/form-data" class="cuentas-form">
+    <input type="hidden" name="_token" value="{{ csrf_token('inventario_auto') }}">
+
+    <div>
+        <label for="modelo">Modelo y marca</label>
+        <select name="modelo" id="modelo" required>
+            <option value="">Seleccionar modelo</option>
+
+            {% for modelo in modelos %}
+                <option
+                    value="{{ modelo.id }}"
+                    {% if auto.modelo and auto.modelo.id == modelo.id %}selected{% endif %}
+                >
+                    {{ modelo.marca.nombre }} — {{ modelo.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div>
+        <label for="anio">Año</label>
+        <input
+            type="number"
+            name="anio"
+            id="anio"
+            min="1900"
+            max="{{ 'now'|date('Y') + 1 }}"
+            required
+            value="{{ auto.anio ?? '' }}"
+        >
+    </div>
+
+    <div>
+        <label for="kilometraje">Kilometraje (km)</label>
+        <input
+            type="number"
+            name="kilometraje"
+            id="kilometraje"
+            min="0"
+            required
+            value="{{ auto.kilometraje ?? '' }}"
+        >
+    </div>
+
+    <div>
+        <label for="precio">Precio ($)</label>
+        <input
+            type="number"
+            name="precio"
+            id="precio"
+            min="1"
+            required
+            value="{{ auto.precio ?? '' }}"
+        >
+    </div>
+
+    <div>
+        <label for="estado">Estado</label>
+        <select name="estado" id="estado" required>
+            {% for estado in estados %}
+                <option
+                    value="{{ estado }}"
+                    {% if auto.estado == estado %}selected{% endif %}
+                >
+                    {{ estado|capitalize }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div>
+        <label for="descripcion">Descripción</label>
+        <textarea
+            name="descripcion"
+            id="descripcion"
+            rows="4"
+            placeholder="Equipamiento destacado, estado general, historial de mantenimiento..."
+        >{{ auto.descripcion ?? '' }}</textarea>
+    </div>
+
+    {% if auto.imagenes|length > 0 %}
+        <div>
+            <label>Imágenes actuales ({{ auto.imagenes|length }}/5)</label>
+            <div class="image-thumbnails" style="margin-top: 8px;">
+                {% for imagen in auto.imagenes %}
+                    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 8px; background: var(--bg);">
+                        <img src="{{ imagen.ruta starts with 'http' ? imagen.ruta : asset(imagen.ruta|trim('/')) }}" alt="Imagen {{ loop.index }}">
+                        <label style="display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                            <input type="checkbox" name="eliminar_imagenes[]" value="{{ imagen.id }}">
+                            Eliminar
+                        </label>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <div>
+        <label for="imagenes">Agregar imágenes del vehículo (1 a 5 fotos)</label>
+        <input
+            type="file"
+            name="imagenes[]"
+            id="imagenes"
+            accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+            multiple
+        >
+        <div class="form-help">Podés seleccionar hasta {{ 5 - auto.imagenes|length }} {{ (5 - auto.imagenes|length) == 1 ? 'imagen' : 'imágenes' }} (JPG, JPEG, PNG o WEBP, recomendado 1200×800 px).</div>
+    </div>
+
+    <div class="cuentas-actions">
+        <button type="submit" class="btn btn-primary">Guardar vehículo</button>
+        <a href="{{ path('inventario_index') }}" class="btn btn-outline">Cancelar</a>
+    </div>
+</form>

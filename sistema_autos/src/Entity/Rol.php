@@ -11,6 +11,9 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'rol')]
 class Rol
 {
+    public const NOMBRE_CLIENTE = 'Cliente';
+    public const NOMBRE_ADMIN = 'Administrador';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

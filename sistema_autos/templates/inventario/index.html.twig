@@ -1,0 +1,129 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Inventario | Luxury Cars{% endblock %}
+
+{% block content %}
+<section class="section cuentas-section">
+    <div class="container">
+        <div class="cuentas-heading">
+            <div>
+                <span class="eyebrow">ADMINISTRACIÓN</span>
+                <h1>Inventario de vehículos</h1>
+                <p>Administrá las unidades registradas, su precio y su disponibilidad en el catálogo.</p>
+            </div>
+            <a href="{{ path('inventario_nuevo') }}" class="btn btn-primary">
+                Registrar vehículo
+            </a>
+        </div>
+
+        <form class="catalog-filters" method="GET" action="{{ path('inventario_index') }}">
+            <div class="filter-grid" style="grid-template-columns: 2fr 1fr auto; align-items: end; padding-top: 0;">
+                <div>
+                    <label for="q">Buscar por marca o modelo</label>
+                    <input
+                        type="search"
+                        id="q"
+                        name="q"
+                        value="{{ busqueda }}"
+                        placeholder="Ejemplo: BMW M4, Toyota Corolla..."
+                    >
+                </div>
+
+                <div>
+                    <label for="estado">Filtrar por estado</label>
+                    <select name="estado" id="estado">
+                        <option value="">Todos los estados</option>
+                        {% for estado in ['disponible', 'reservado', 'vendido', 'inactivo'] %}
+                            <option
+                                value="{{ estado }}"
+                                {% if estadoSeleccionado == estado %}selected{% endif %}
+                            >
+                                {{ estado|capitalize }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-actions" style="margin-top: 0;">
+                    <button type="submit" class="btn btn-primary">Buscar</button>
+                    <a href="{{ path('inventario_index') }}" class="btn btn-outline">Limpiar</a>
+                </div>
+            </div>
+        </form>
+
+        {% if autos is empty %}
+            <div class="empty-state">
+                <span aria-hidden="true">🚗</span>
+                <h2>No se encontraron vehículos</h2>
+                <p>Probá modificando los filtros de búsqueda o registrá una nueva unidad.</p>
+                <a href="{{ path('inventario_index') }}" class="btn btn-outline">Ver todo el inventario</a>
+            </div>
+        {% else %}
+            <div class="cuentas-card cuentas-table-wrapper">
+                <table class="cuentas-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Marca</th>
+                            <th scope="col">Modelo</th>
+                            <th scope="col">Año</th>
+                            <th scope="col">Kilometraje</th>
+                            <th scope="col">Precio</th>
+                            <th scope="col">Estado</th>
+                            <th scope="col">Acciones</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for auto in autos %}
+                            <tr>
+                                <td>#{{ auto.id }}</td>
+                                <td><strong>{{ auto.modelo.marca.nombre }}</strong></td>
+                                <td>
+                                    <a href="{{ path('app_auto_show', {id: auto.id}) }}" class="text-link">
+                                        {{ auto.modelo.nombre }}
+                                    </a>
+                                </td>
+                                <td>{{ auto.anio }}</td>
+                                <td>{{ auto.kilometraje|number_format(0, ',', '.') }} km</td>
+                                <td><strong>${{ auto.precio|number_format(0, ',', '.') }}</strong></td>
+                                <td>
+                                    {% set badgeClass = auto.estado == 'disponible'
+                                        ? 'status-confirmada'
+                                        : (auto.estado == 'inactivo' or auto.estado == 'vendido' ? 'status-cancelada' : '') %}
+                                    <span class="status {{ badgeClass }}">
+                                        {{ auto.estado|capitalize }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="cuentas-actions">
+                                        <a href="{{ path('inventario_editar', {id: auto.id}) }}" class="btn btn-outline">
+                                            Editar
+                                        </a>
+
+                                        {% if auto.estado != 'inactivo' %}
+                                            <form
+                                                method="POST"
+                                                action="{{ path('inventario_eliminar', {id: auto.id}) }}"
+                                                onsubmit="return confirm('¿Dar de baja este vehículo?');"
+                                            >
+                                                <input
+                                                    type="hidden"
+                                                    name="_token"
+                                                    value="{{ csrf_token('eliminar_auto_' ~ auto.id) }}"
+                                                >
+                                                <button type="submit" class="btn btn-outline text-danger">Dar de baja</button>
+                                            </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

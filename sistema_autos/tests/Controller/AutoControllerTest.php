@@ -5,14 +5,60 @@ namespace App\Tests\Controller;
 use App\Entity\Auto;
 use App\Entity\Marca;
 use App\Entity\Modelo;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Tools\SchemaTool;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
 final class AutoControllerTest extends WebTestCase
 {
+    private KernelBrowser $client;
+    private string $databasePath;
+    private mixed $databaseServerAnterior;
+    private mixed $databaseEnvAnterior;
+    private string|false $databaseProcesoAnterior;
+
+    protected function setUp(): void
+    {
+        self::ensureKernelShutdown();
+        $this->databasePath = dirname(__DIR__, 2).'/var/cu2-test-'.bin2hex(random_bytes(6)).'.db';
+        $this->databaseServerAnterior = $_SERVER['DATABASE_URL'] ?? null;
+        $this->databaseEnvAnterior = $_ENV['DATABASE_URL'] ?? null;
+        $this->databaseProcesoAnterior = getenv('DATABASE_URL');
+        $databaseUrl = 'sqlite:///'.str_replace('\\', '/', $this->databasePath);
+        $_SERVER['DATABASE_URL'] = $_ENV['DATABASE_URL'] = $databaseUrl;
+        putenv('DATABASE_URL='.$databaseUrl);
+
+        $this->client = static::createClient(['environment' => 'test']);
+        $entityManager = static::getContainer()->get(EntityManagerInterface::class);
+        (new SchemaTool($entityManager))->createSchema($entityManager->getMetadataFactory()->getAllMetadata());
+    }
+
+    protected function tearDown(): void
+    {
+        if (static::$kernel !== null) {
+            static::getContainer()->get(EntityManagerInterface::class)->getConnection()->close();
+        }
+        parent::tearDown();
+        if (isset($this->databasePath) && is_file($this->databasePath)) {
+            unlink($this->databasePath);
+        }
+        if ($this->databaseServerAnterior === null) {
+            unset($_SERVER['DATABASE_URL']);
+        } else {
+            $_SERVER['DATABASE_URL'] = $this->databaseServerAnterior;
+        }
+        if ($this->databaseEnvAnterior === null) {
+            unset($_ENV['DATABASE_URL']);
+        } else {
+            $_ENV['DATABASE_URL'] = $this->databaseEnvAnterior;
+        }
+        putenv($this->databaseProcesoAnterior === false ? 'DATABASE_URL' : 'DATABASE_URL='.$this->databaseProcesoAnterior);
+    }
+
     public function testInicioSigueDisponibleConElKernelDeSymfony(): void
     {
-        $client = static::createClient();
-        $client->request('GET', '/');
+        $this->client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Encontrá tu próximo');
@@ -20,8 +66,7 @@ final class AutoControllerTest extends WebTestCase
 
     public function testCatalogoVacioSeInformaAlCliente(): void
     {
-        $client = static::createClient();
-        $client->request('GET', '/auto');
+        $this->client->request('GET', '/auto');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('h1', 'Explorá nuestro inventario');
@@ -30,8 +75,7 @@ final class AutoControllerTest extends WebTestCase
 
     public function testFiltrosSinCoincidenciasSePuedenEliminar(): void
     {
-        $client = static::createClient();
-        $client->request('GET', '/auto?q=marca-inexistente&precioMin=1000&orden=precio_asc');
+        $this->client->request('GET', '/auto?q=marca-inexistente&precioMin=1000&orden=precio_asc');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.empty-state h2', 'No se encontraron vehículos');
@@ -40,8 +84,7 @@ final class AutoControllerTest extends WebTestCase
 
     public function testComparadorVacioInvitaAExplorarElCatalogo(): void
     {
-        $client = static::createClient();
-        $client->request('GET', '/auto/comparar');
+        $this->client->request('GET', '/auto/comparar');
 
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('.empty-state h2', 'Todavía no seleccionaste vehículos');
@@ -49,7 +92,6 @@ final class AutoControllerTest extends WebTestCase
 
     public function testCompararDesdeElCatalogoAgregaElAutoSinAbrirSuDetalle(): void
     {
-        $client = static::createClient();
         $entityManager = static::getContainer()->get('doctrine')->getManager();
         $sufijo = uniqid('', true);
         $marca = (new Marca())->setNombre('Marca Comparador CU002 '.$sufijo);
@@ -65,31 +107,19 @@ final class AutoControllerTest extends WebTestCase
         $entityManager->persist($modelo);
         $entityManager->persist($auto);
         $entityManager->flush();
-        $autoId = $auto->getId();
-        $modeloId = $modelo->getId();
-        $marcaId = $marca->getId();
 
-        try {
-            $crawler = $client->request('GET', '/auto?q=Modelo%20Comparador');
-            $form = $crawler->filter('.vehicle-card form')->form();
-            $client->submit($form);
+        $crawler = $this->client->request('GET', '/auto?q=Modelo%20Comparador');
+        $form = $crawler->filter('.vehicle-card form')->form();
+        $this->client->submit($form);
 
-            self::assertResponseRedirects('/auto');
+        self::assertResponseRedirects('/auto');
 
-            $client->followRedirect();
-            self::assertSelectorTextContains('.catalog-heading .btn', 'Comparar (1/2)');
-        } finally {
-            $entityManager = static::getContainer()->get('doctrine')->getManager();
-            $entityManager->remove($entityManager->getReference(Auto::class, $autoId));
-            $entityManager->remove($entityManager->getReference(Modelo::class, $modeloId));
-            $entityManager->remove($entityManager->getReference(Marca::class, $marcaId));
-            $entityManager->flush();
-        }
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('.catalog-heading .btn', 'Comparar (1/2)');
     }
 
     public function testCatalogoCombinaFiltrosYOcultaUnidadesNoDisponibles(): void
     {
-        $client = static::createClient();
         $entityManager = static::getContainer()->get('doctrine')->getManager();
         $marca = (new Marca())->setNombre('Marca Prueba CU002');
         $modelo = (new Modelo())->setNombre('Modelo Filtrable')->setMarca($marca);
@@ -112,29 +142,20 @@ final class AutoControllerTest extends WebTestCase
         $entityManager->persist($vendido);
         $entityManager->flush();
 
-        try {
-            $client->request('GET', sprintf(
-                '/auto?q=Prueba%%20CU002&precioMin=10000&precioMax=20000&kilometrajeMax=20000&anioDesde=2023&anioHasta=2025&marca=%d',
-                $marca->getId(),
-            ));
+        $this->client->request('GET', sprintf(
+            '/auto?q=Prueba%%20CU002&precioMin=10000&precioMax=20000&kilometrajeMax=20000&anioDesde=2023&anioHasta=2025&marca=%d',
+            $marca->getId(),
+        ));
 
-            self::assertResponseIsSuccessful();
-            self::assertSelectorCount(1, '.vehicle-card');
-            self::assertSelectorTextContains('.vehicle-card', 'Modelo Filtrable');
-            self::assertSelectorTextContains('.catalog-heading', '1 vehículo disponible');
-        } finally {
-            $entityManager->remove($disponible);
-            $entityManager->remove($vendido);
-            $entityManager->remove($modelo);
-            $entityManager->remove($marca);
-            $entityManager->flush();
-        }
+        self::assertResponseIsSuccessful();
+        self::assertSelectorCount(1, '.vehicle-card');
+        self::assertSelectorTextContains('.vehicle-card', 'Modelo Filtrable');
+        self::assertSelectorTextContains('.catalog-heading', '1 vehículo disponible');
     }
 
     public function testFavoritosRequiereAutenticacion(): void
     {
-        $client = static::createClient();
-        $client->request('GET', '/favoritos');
+        $this->client->request('GET', '/favoritos');
 
         self::assertResponseRedirects('/login?redirect=%2Ffavoritos');
     }

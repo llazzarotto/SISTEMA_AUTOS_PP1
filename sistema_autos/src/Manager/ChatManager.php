@@ -17,6 +17,7 @@ final class ChatManager
     public const ROL_ADMIN = 'ROL_ADMIN';
     public const ESTADO_CONECTADO = 'CONECTADO';
     private const CLAVE_MENSAJES_SESION = 'chat_mensajes_sesion';
+    private const SEPARADOR_RESPUESTA_ADMIN = "\n[ADMIN]: ";
 
     public function __construct(
         private AutoRepository $autoRepository,
@@ -64,7 +65,7 @@ final class ChatManager
 
         if ($autoId > 0) {
             $autoCandidato = $this->autoRepository->find($autoId);
-            if ($autoCandidato instanceof Auto && $autoCandidato->getEstado() === 'disponible') {
+            if ($autoCandidato instanceof Auto && $autoCandidato->estaDisponible()) {
                 $auto = $autoCandidato;
             }
         }
@@ -93,11 +94,26 @@ final class ChatManager
         $mensajes = [];
 
         foreach ($consultas as $consulta) {
-            $mensajes[] = [
-                'texto' => (string) $consulta->getMensaje(),
-                'rol' => self::ROL_CLIENTE,
-                'estado' => (string) $consulta->getEstado(),
-            ];
+            $partes = explode(self::SEPARADOR_RESPUESTA_ADMIN, (string) $consulta->getMensaje());
+            $mensajeCliente = trim((string) array_shift($partes));
+            if ($mensajeCliente !== '') {
+                $mensajes[] = [
+                    'texto' => $mensajeCliente,
+                    'rol' => self::ROL_CLIENTE,
+                    'estado' => (string) $consulta->getEstado(),
+                ];
+            }
+
+            foreach ($partes as $respuestaAdmin) {
+                $respuestaLimpia = trim($respuestaAdmin);
+                if ($respuestaLimpia !== '') {
+                    $mensajes[] = [
+                        'texto' => $respuestaLimpia,
+                        'rol' => self::ROL_ADMIN,
+                        'estado' => 'respondida',
+                    ];
+                }
+            }
         }
 
         $enSesion = $session->get(self::CLAVE_MENSAJES_SESION, []);
@@ -117,6 +133,38 @@ final class ChatManager
         return $mensajes;
     }
 
+    /**
+     * @return list<Consulta>
+     */
+    public function obtenerConsultasParaAdmin(): array
+    {
+        return $this->consultaRepository->createQueryBuilder('c')
+            ->addSelect('usuario', 'auto', 'modelo', 'marca')
+            ->innerJoin('c.usuario', 'usuario')
+            ->leftJoin('c.auto', 'auto')
+            ->leftJoin('auto.modelo', 'modelo')
+            ->leftJoin('modelo.marca', 'marca')
+            ->orderBy('c.fechaCreacion', 'DESC')
+            ->addOrderBy('c.id', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function responderConsulta(Consulta $consulta, string $respuesta): void
+    {
+        $respuestaLimpia = trim($respuesta);
+        if ($respuestaLimpia === '') {
+            throw new \InvalidArgumentException('La respuesta no puede estar vacía.');
+        }
+
+        $consulta->setMensaje(
+            (string) $consulta->getMensaje() . self::SEPARADOR_RESPUESTA_ADMIN . $respuestaLimpia
+        );
+        $consulta->setEstado('respondida');
+
+        $this->entityManager->flush();
+    }
+
     public function registrarMensaje(
         SessionInterface $session,
         Usuario $usuario,
@@ -129,38 +177,15 @@ final class ChatManager
             throw new \InvalidArgumentException('El mensaje de la consulta no puede estar vacío.');
         }
 
-        $autoAsociado = $auto;
-        if (!$autoAsociado instanceof Auto) {
-            $autoAsociado = $this->autoRepository->findOneBy(['estado' => 'disponible'])
-                ?? $this->autoRepository->findOneBy([]);
-        }
+        $consulta = (new Consulta())
+            ->setUsuario($usuario)
+            ->setAuto($auto)
+            ->setMensaje($textoLimpio)
+            ->setEstado($esOffline ? 'offline' : 'pendiente');
 
-        if ($autoAsociado instanceof Auto) {
-            $consulta = (new Consulta())
-                ->setUsuario($usuario)
-                ->setAuto($autoAsociado)
-                ->setMensaje($textoLimpio)
-                ->setEstado($esOffline ? 'offline' : 'pendiente');
+        $this->entityManager->persist($consulta);
+        $this->entityManager->flush();
 
-            $this->entityManager->persist($consulta);
-            $this->entityManager->flush();
-
-            return $consulta;
-        }
-
-        $enSesion = $session->get(self::CLAVE_MENSAJES_SESION, []);
-        if (!is_array($enSesion)) {
-            $enSesion = [];
-        }
-        $enSesion[] = [
-            'usuarioId' => (int) $usuario->getId(),
-            'texto' => $textoLimpio,
-            'rol' => self::ROL_CLIENTE,
-            'estado' => $esOffline ? 'offline' : 'pendiente',
-        ];
-        $session->set(self::CLAVE_MENSAJES_SESION, $enSesion);
-
-        return null;
+        return $consulta;
     }
 }
-

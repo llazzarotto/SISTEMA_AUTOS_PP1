@@ -23,12 +23,12 @@ final class FinanciamientoController extends AbstractController
     #[Route('/financiamiento', name: 'app_financiamiento_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
-        $autosDisponibles = $this->autoRepository->findBy(['estado' => 'disponible'], ['id' => 'ASC']);
+        $autosDisponibles = $this->autoRepository->obtenerDisponiblesConModeloYMarca('ASC');
         $autoId = $request->query->getInt('auto', 0);
 
         $auto = null;
         if ($autoId > 0) {
-            $auto = $this->autoRepository->find($autoId);
+            $auto = $this->buscarAutoPorId($autoId, $autosDisponibles);
         } elseif ($autosDisponibles !== []) {
             $auto = $autosDisponibles[0];
         }
@@ -39,8 +39,8 @@ final class FinanciamientoController extends AbstractController
     #[Route('/financiamiento/{id}', name: 'app_financiamiento_show', requirements: ['id' => '\d+'], methods: ['GET'])]
     public function show(int $id): Response
     {
-        $auto = $this->autoRepository->find($id);
-        $autosDisponibles = $this->autoRepository->findBy(['estado' => 'disponible'], ['id' => 'ASC']);
+        $autosDisponibles = $this->autoRepository->obtenerDisponiblesConModeloYMarca('ASC');
+        $auto = $this->buscarAutoPorId($id, $autosDisponibles);
 
         return $this->renderSimulador($auto, $autosDisponibles, true);
     }
@@ -49,7 +49,8 @@ final class FinanciamientoController extends AbstractController
     public function resultado(int $id, Request $request): JsonResponse
     {
         $auto = $this->autoRepository->find($id);
-        if (!$auto instanceof Auto || $auto->getEstado() !== 'disponible') {
+
+        if (!$auto instanceof Auto || !$auto->estaDisponible()) {
             return $this->json([
                 'estado' => 'ERROR',
                 'mensaje' => 'El vehículo seleccionado no existe o ya no está disponible.',
@@ -96,6 +97,20 @@ final class FinanciamientoController extends AbstractController
     /**
      * @param list<Auto> $autosDisponibles
      */
+    private function buscarAutoPorId(int $id, array $autosDisponibles): ?Auto
+    {
+        foreach ($autosDisponibles as $item) {
+            if ($item->getId() === $id) {
+                return $item;
+            }
+        }
+
+        return $this->autoRepository->find($id);
+    }
+
+    /**
+     * @param list<Auto> $autosDisponibles
+     */
     private function renderSimulador(?Auto $auto, array $autosDisponibles, bool $autoSolicitado): Response
     {
         $parametros = $this->financiamientoManager->obtenerParametros();
@@ -105,7 +120,7 @@ final class FinanciamientoController extends AbstractController
         if ($parametros['cuotasDisponibles'] === []) {
             $errorSistema = true;
             $mensajeError = 'El sistema no pudo obtener los parámetros de financiación.';
-        } elseif (!$auto instanceof Auto || $auto->getEstado() !== 'disponible') {
+        } elseif (!$auto instanceof Auto || !$auto->estaDisponible()) {
             $errorSistema = true;
             $mensajeError = $autoSolicitado
                 ? 'El vehículo seleccionado no existe o ya no está disponible para simular financiación.'
@@ -121,4 +136,3 @@ final class FinanciamientoController extends AbstractController
         ]);
     }
 }
-
