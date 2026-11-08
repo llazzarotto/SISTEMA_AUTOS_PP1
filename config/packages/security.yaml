@@ -1,0 +1,46 @@
+security:
+    # CU1 distingue email inexistente y contraseña incorrecta.
+    expose_security_errors: all
+    # Symfony elige el algoritmo para generar y verificar el hash de la contraseña.
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+
+    # Busca al usuario en la base de datos por su email.
+    providers:
+        usuarios:
+            entity:
+                class: App\Entity\Usuario
+                property: email
+
+    firewalls:
+        dev:
+            # Permite acceder a los recursos y las herramientas de desarrollo.
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
+        main:
+            lazy: true
+            provider: usuarios
+            # Comprueba email y contraseña antes de ejecutar el controlador de login.
+            form_login:
+                login_path: app_login
+                check_path: app_login
+                enable_csrf: true
+                default_target_path: app_home
+            logout:
+                path: app_logout
+                target: app_login
+                enable_csrf: true
+
+    # La gestión de usuarios requiere el rol de administrador.
+    access_control:
+        - { path: ^/usuarios(?:/|$), roles: ROLE_ADMIN }
+
+when@test:
+    security:
+        password_hashers:
+            # Solo en las pruebas se reduce el costo del hash para ejecutarlas más rápido.
+            Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface:
+                algorithm: auto
+                cost: 4
+                time_cost: 3
+                memory_cost: 10

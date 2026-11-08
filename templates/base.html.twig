@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}AutoMarket{% endblock %}</title>
+
+    <meta name="description"
+          content="{% block description %}Encontrá tu próximo auto en Luxury Cars.{% endblock %}">
+
+    <link rel="stylesheet" href="{{ app.request.basePath }}/assets/css/styles.css">
+    <link rel="stylesheet" href="{{ app.request.basePath }}/assets/css/cuentas.css">
+
+    {% block styles %}{% endblock %}
+</head>
+
+<body>
+    {% include "header.html.twig" %}
+
+    <main id="contenido-principal">
+        {% for tipo, mensajes in app.flashes %}
+            <div class="container flash-container" aria-live="polite">
+                {% for mensaje in mensajes %}
+                    <div class="flash flash-{{ tipo }}" role="status">{{ mensaje }}</div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        {% block content %}{% endblock %}
+    </main>
+
+    {% include "footer.html.twig" %}
+</body>
+</html>

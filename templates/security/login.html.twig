@@ -1,0 +1,30 @@
+{% extends 'cuentas/layout.html.twig' %}
+
+{% block title %}Ingresar | Luxury Cars{% endblock %}
+
+{% block cuentas_content %}
+    <div class="cuentas-card cuentas-auth">
+        <span class="eyebrow">LUXURY CARS</span>
+        <h1>Ingresar</h1>
+        <p>Ingresá con tu email y contraseña.</p>
+
+        {% if error %}<div class="cuentas-message cuentas-error" role="alert">{{ error }}</div>{% endif %}
+
+        <form action="{{ path('app_login') }}" method="post" class="cuentas-form">
+            <div>
+                <label for="email">Email</label>
+                <input type="email" id="email" name="_username" value="{{ email }}" autocomplete="username" maxlength="180" required autofocus>
+            </div>
+            <div>
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" name="_password" autocomplete="current-password" required maxlength="4096">
+            </div>
+            {% if app.request.query.get('redirect') %}
+                <input type="hidden" name="_target_path" value="{{ app.request.query.get('redirect') }}">
+            {% endif %}
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+            <button type="submit" class="btn btn-primary">Ingresar</button>
+        </form>
+        <p class="cuentas-link">¿Todavía no tenés cuenta? <a href="{{ path('app_registro') }}">Registrarse</a></p>
+    </div>
+{% endblock %}

@@ -1,0 +1,232 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Simulador de Financiación | Luxury Cars{% endblock %}
+
+{% block styles %}
+    <link rel="stylesheet" href="{{ app.request.basePath }}/assets/css/calculadora.css">
+{% endblock %}
+
+{% block content %}
+<section class="section calculadora-page">
+    <div class="container">
+<div class="calculadora-container">
+    <h2>Simulador de Financiación</h2>
+
+    {# Validaciones de precondición enviadas desde el FinanciamientoController #}
+    {% if errorSistema %}
+        <div class="alert alert-danger">
+            {{ mensajeError }}
+        </div>
+    {% else %}
+        {% if autosDisponibles is defined and autosDisponibles|length > 1 %}
+            <div class="form-group">
+                <label for="selectorAuto">Cambiar vehículo:</label>
+                <select id="selectorAuto" class="form-control">
+                    {% for item in autosDisponibles %}
+                        <option value="{{ path('app_financiamiento_show', {id: item.id}) }}" {{ item.id == auto.id ? 'selected' : '' }}>
+                            {{ item.modelo.marca.nombre }} {{ item.modelo.nombre }} ({{ item.anio }}) - ${{ item.precio|number_format(0, ',', '.') }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        {% endif %}
+
+        <div class="vehiculo-info">
+            <p>Vehículo seleccionado: <strong>{{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }}</strong></p>
+            <p>Precio Total: $<strong id="precio-vehiculo" data-id="{{ auto.id }}" data-precio="{{ auto.precio }}">{{ auto.precio|number_format(2, ',', '.') }}</strong></p>
+        </div>
+
+        <form id="form-financiamiento" class="form-financiamiento">
+            <div class="form-group">
+                <label for="montoEntrega">Monto de Entrega Inicial ($):</label>
+                <input type="number" id="montoEntrega" name="montoEntrega" class="form-control" placeholder="Ej: 0 para financiar el 100%" min="0" step="1000">
+                <span id="error-entrega" class="error-message hidden"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="cantidadCuotas">Cantidad de Cuotas:</label>
+                <select id="cantidadCuotas" name="cantidadCuotas" class="form-control">
+                    <option value="" disabled selected>Seleccione las cuotas</option>
+                    {% for cuota in parametros.cuotasDisponibles %}
+                        <option value="{{ cuota.cantidadCuotas }}" data-tasa="{{ cuota.tasaInteres }}">
+                            {{ cuota.cantidadCuotas }} cuotas (Tasa: {{ cuota.tasaInteres }}%)
+                        </option>
+                    {% endfor %}
+                </select>
+                <span id="error-cuotas" class="error-message hidden"></span>
+            </div>
+
+            <button type="button" id="btn-calcular" class="btn btn-primary">Calcular financiación</button>
+        </form>
+
+        <div id="resultado-simulacion" class="resultado-simulacion hidden">
+            <h3>Resultado Estimativo</h3>
+            <div class="resultado-datos">
+                <p>Capital a Financiar: $<strong id="res-capital"></strong></p>
+                <p>Valor de Cuota Estimado: $<strong id="res-cuota"></strong></p>
+            </div>
+            <small class="nota-legal">La simulación no genera una operación financiera, una reserva ni una obligación contractual.</small>
+            
+            <div class="acciones-post-calculo">
+                <button type="button" id="btn-modificar" class="btn btn-secondary">Modificar Simulación</button>
+                <button type="button" id="btn-consultar-chat" class="btn btn-success">Consultar por esta financiación</button>
+            </div>
+        </div>
+    {% endif %}
+</div>
+    </div>
+</section>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const selectorAuto = document.getElementById('selectorAuto');
+    if (selectorAuto) {
+        selectorAuto.addEventListener('change', function() {
+            if (this.value) {
+                window.location.href = this.value;
+            }
+        });
+    }
+
+    const btnCalcular = document.getElementById('btn-calcular');
+    if (!btnCalcular) return;
+
+    // Elementos del DOM
+    const dataAuto = document.getElementById('precio-vehiculo');
+    const inputMontoEntrega = document.getElementById('montoEntrega');
+    const selectCantidadCuotas = document.getElementById('cantidadCuotas');
+    const formFinanciamiento = document.getElementById('form-financiamiento');
+    const panelResultado = document.getElementById('resultado-simulacion');
+    
+    // Variables y Constantes siguiendo las convenciones
+    const precioAuto = parseFloat(dataAuto.dataset.precio);
+    const idAuto = dataAuto.dataset.id;
+    
+    // Constantes para el estado o configuración
+    const SIMULACION_EXITOSA = 'EXITO';
+    const RUTA_BASE_CHAT = '{{ app.request.basePath }}/chat';
+    const RUTA_RESULTADO = `{{ app.request.basePath }}/financiamiento/${idAuto}/resultado`;
+
+    let simulacionActualId = null;
+    let ultimoCapitalFinanciar = 0;
+    let ultimoValorCuota = 0;
+    let ultimaCantidadCuotas = 0;
+
+    // Métodos en camelCase
+    function validarDatosFinanciacion(montoEntrega, cantidadCuotas) {
+        let esValido = true;
+        const errorEntrega = document.getElementById('error-entrega');
+        const errorCuotas = document.getElementById('error-cuotas');
+
+        // Reset visual
+        errorEntrega.classList.add('hidden');
+        errorCuotas.classList.add('hidden');
+        inputMontoEntrega.classList.remove('is-invalid');
+        selectCantidadCuotas.classList.remove('is-invalid');
+
+        if (montoEntrega < 0) {
+            errorEntrega.textContent = "El monto de entrega no puede ser negativo.";
+            errorEntrega.classList.remove('hidden');
+            inputMontoEntrega.classList.add('is-invalid');
+            esValido = false;
+        } else if (montoEntrega > precioAuto) {
+            errorEntrega.textContent = "La entrega inicial no puede superar el precio del vehículo.";
+            errorEntrega.classList.remove('hidden');
+            inputMontoEntrega.classList.add('is-invalid');
+            esValido = false;
+        }
+
+        if (!cantidadCuotas) {
+            errorCuotas.textContent = "Debe seleccionar una cantidad de cuotas.";
+            errorCuotas.classList.remove('hidden');
+            selectCantidadCuotas.classList.add('is-invalid');
+            esValido = false;
+        }
+
+        return esValido;
+    }
+
+    async function calcularFinanciacion() {
+        const valorRaw = inputMontoEntrega.value.trim();
+        const montoEntrega = valorRaw === '' ? 0 : parseFloat(valorRaw);
+        const cantidadCuotas = selectCantidadCuotas.value;
+
+        if (!validarDatosFinanciacion(montoEntrega, cantidadCuotas)) {
+            return;
+        }
+
+        const capitalAFinanciar = precioAuto - montoEntrega;
+        const opcionSeleccionada = selectCantidadCuotas.options[selectCantidadCuotas.selectedIndex];
+        const tasaInteres = parseFloat(opcionSeleccionada.dataset.tasa) / 100;
+        
+        const valorCuotaEstimado = (capitalAFinanciar + (capitalAFinanciar * tasaInteres)) / parseInt(cantidadCuotas, 10);
+
+        ultimoCapitalFinanciar = capitalAFinanciar;
+        ultimoValorCuota = valorCuotaEstimado;
+        ultimaCantidadCuotas = parseInt(cantidadCuotas, 10);
+
+        // Actualizar UI
+        document.getElementById('res-capital').textContent = capitalAFinanciar.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('res-cuota').textContent = valorCuotaEstimado.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        formFinanciamiento.classList.add('hidden');
+        panelResultado.classList.remove('hidden');
+
+        simulacionActualId = generarIdSimulado();
+
+        try {
+            const respuesta = await fetch(RUTA_RESULTADO, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    montoEntrega: montoEntrega,
+                    cantidadCuotas: parseInt(cantidadCuotas, 10)
+                })
+            });
+
+            if (respuesta.ok) {
+                const datos = await respuesta.json();
+                if (datos.estado === SIMULACION_EXITOSA && datos.simulacionId) {
+                    simulacionActualId = datos.simulacionId;
+                }
+            }
+        } catch (e) {
+            // Se conserva el ID generado localmente y los parámetros de consulta
+        }
+    }
+
+    function iniciarConsultaChat() {
+        const params = new URLSearchParams({
+            auto: idAuto,
+            cuotas: String(ultimaCantidadCuotas),
+            capital: String(ultimoCapitalFinanciar),
+            cuota: String(ultimoValorCuota)
+        });
+
+        if (simulacionActualId) {
+            window.location.href = `${RUTA_BASE_CHAT}/${simulacionActualId}?${params.toString()}`;
+        } else {
+            window.location.href = `${RUTA_BASE_CHAT}?${params.toString()}`;
+        }
+    }
+
+    function generarIdSimulado() {
+        return Math.random().toString(36).substring(2, 11);
+    }
+
+    // Listeners
+    btnCalcular.addEventListener('click', calcularFinanciacion);
+
+    document.getElementById('btn-modificar').addEventListener('click', function() {
+        panelResultado.classList.add('hidden');
+        formFinanciamiento.classList.remove('hidden');
+    });
+
+    document.getElementById('btn-consultar-chat').addEventListener('click', iniciarConsultaChat);
+});
+</script>
+{% endblock %}
+
