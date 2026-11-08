@@ -28,7 +28,7 @@ class Consulta
     private ?Usuario $usuario = null;
 
     #[ORM\ManyToOne(inversedBy: 'consultas')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
     private ?Auto $auto = null;
 
     public function __construct()

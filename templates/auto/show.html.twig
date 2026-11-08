@@ -8,20 +8,41 @@
     <div class="container">
         <a class="back-link" href="{{ path('app_auto_index') }}">← Volver al catálogo</a>
 
+        {% set rutasImagenes = auto.obtenerRutasImagenes() %}
         <div class="vehicle-detail">
             <div class="vehicle-gallery">
-                {{ autoImagen.principal(auto, 'detail-main-image', 'detail-placeholder', app.request.basePath) }}
-                {% if auto.imagenes|length > 1 %}
-                    <div class="image-thumbnails">
-                        {% for imagen in auto.imagenes %}
-                            <img src="{{ imagen.ruta starts with 'http' ? imagen.ruta : app.request.basePath ~ '/' ~ imagen.ruta|trim('/') }}" alt="Vista {{ loop.index }} de {{ auto.modelo.nombre }}">
-                        {% endfor %}
-                    </div>
+                {% if rutasImagenes|length > 0 %}
+                    {% set primeraRuta = rutasImagenes|first %}
+                    {% set urlPrincipal = primeraRuta starts with 'http'
+                        ? primeraRuta
+                        : app.request.basePath ~ '/' ~ primeraRuta|trim('/') %}
+                    <img id="imagen-principal-auto"
+                         class="detail-main-image"
+                         src="{{ urlPrincipal }}"
+                         alt="{{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }}">
+
+                    {% if rutasImagenes|length > 1 %}
+                        <div class="image-thumbnails" role="list" aria-label="Galería de imágenes del vehículo">
+                            {% for ruta in rutasImagenes %}
+                                {% set urlMiniatura = ruta starts with 'http'
+                                    ? ruta
+                                    : app.request.basePath ~ '/' ~ ruta|trim('/') %}
+                                <button type="button"
+                                        class="thumbnail-btn {{ loop.first ? 'is-active' : '' }}"
+                                        data-imagen-src="{{ urlMiniatura }}"
+                                        aria-label="Ver imagen {{ loop.index }} de {{ auto.modelo.nombre }}">
+                                    <img src="{{ urlMiniatura }}" alt="Vista {{ loop.index }} de {{ auto.modelo.nombre }}">
+                                </button>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="detail-placeholder" aria-hidden="true">🚗</div>
                 {% endif %}
             </div>
 
             <div class="vehicle-detail-info">
-                <span class="availability-badge detail-badge">Disponible</span>
+                <span class="availability-badge detail-badge">{{ auto.estado|capitalize }}</span>
                 <p class="vehicle-brand">{{ auto.modelo.marca.nombre }}</p>
                 <h1>{{ auto.modelo.nombre }}</h1>
                 <p class="vehicle-price detail-price">$ {{ auto.precio|number_format(0, ',', '.') }}</p>
@@ -39,21 +60,46 @@
                     </div>
                 {% endif %}
 
-                {% set chatPath = app.request.basePath ~ '/chat?auto=' ~ auto.id %}
+                {% set chatPath = path('app_chat', {auto: auto.id}) %}
                 <div class="detail-actions">
-                    <a class="btn btn-primary" href="{{ app.user ? chatPath : app.request.basePath ~ '/login?redirect=' ~ chatPath|url_encode }}">Realizar consulta</a>
-                    <a class="btn btn-outline" href="{{ app.request.basePath }}/financiamiento/{{ auto.id }}">Calcular financiación</a>
-                    <form method="post" action="{{ path('app_auto_favorite_toggle', {id: auto.id}) }}">
-                        <input type="hidden" name="_token" value="{{ csrf_token('favorito_' ~ auto.id) }}">
-                        <button class="btn btn-outline" type="submit">{{ esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos' }}</button>
-                    </form>
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <a class="btn btn-primary" href="{{ path('inventario_editar', {id: auto.id}) }}">Editar vehículo</a>
+                        <a class="btn btn-outline" href="{{ path('inventario_index') }}">Panel de edición de vehículos</a>
+                    {% else %}
+                        <a class="btn btn-primary" href="{{ app.user ? chatPath : path('app_login', {redirect: chatPath}) }}">Realizar consulta</a>
+                        <a class="btn btn-outline" href="{{ path('app_reservas_nueva', {auto: auto.id}) }}">Reservar cita</a>
+                        <form method="post" action="{{ path('app_auto_favorite_toggle', {id: auto.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('favorito_' ~ auto.id) }}">
+                            <button class="btn btn-outline" type="submit">{{ esFavorito ? 'Quitar de favoritos' : 'Agregar a favoritos' }}</button>
+                        </form>
+                    {% endif %}
+                    <a class="btn btn-outline" href="{{ path('app_financiamiento_show', {id: auto.id}) }}">Calcular financiación</a>
                     <form method="post" action="{{ path('app_auto_compare_toggle', {id: auto.id}) }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('comparar_' ~ auto.id) }}">
-                        <button class="btn btn-outline" type="submit">Comparar</button>
+                        <button class="btn btn-outline" type="submit">{{ enComparador|default(false) ? 'Quitar de comparación' : 'Comparar' }}</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 </section>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const imagenPrincipal = document.getElementById('imagen-principal-auto');
+    const botonesMiniatura = document.querySelectorAll('.thumbnail-btn[data-imagen-src]');
+    if (!imagenPrincipal || botonesMiniatura.length === 0) return;
+
+    botonesMiniatura.forEach(function(boton) {
+        boton.addEventListener('click', function() {
+            imagenPrincipal.src = boton.dataset.imagenSrc;
+            botonesMiniatura.forEach(function(item) {
+                item.classList.toggle('is-active', item === boton);
+            });
+        });
+    });
+});
+</script>
 {% endblock %}

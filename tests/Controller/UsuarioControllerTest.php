@@ -237,7 +237,13 @@ final class UsuarioControllerTest extends WebTestCase
         }
         foreach ([$this->clienteId, $this->administradorId] as $usuarioId) {
             $usuario = $entityManager->find(Usuario::class, $usuarioId);
-            $cita = (new Cita())->setUsuario($usuario)->setAuto($auto)->setFechaHora(new \DateTimeImmutable('2030-05-10 10:00:00'));
+            $cita = (new Cita())
+                ->setUsuario($usuario)
+                ->setAuto($auto)
+                ->setFechaHora(
+                    (new \DateTimeImmutable('2030-05-10 10:00:00'))->modify(sprintf('+%d hours', $usuarioId)),
+                )
+                ->setTipoServicio(Cita::SERVICIO_TEST_DRIVE);
             $consulta = (new Consulta())->setUsuario($usuario)->setAuto($auto)->setMensaje('Consulta de prueba');
             $favorito = (new Favorito())->setUsuario($usuario)->setAuto($auto);
             foreach ([$cita, $consulta, $favorito] as $relacion) {

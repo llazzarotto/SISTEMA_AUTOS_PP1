@@ -88,7 +88,7 @@ final class AutoController extends AbstractController
             throw $this->createAccessDeniedException('El token de seguridad no es válido.');
         }
 
-        if ($auto->getEstado() !== 'disponible') {
+        if (!$auto->estaDisponible()) {
             $this->addFlash('error', 'El vehículo seleccionado ya no está disponible.');
 
             return $this->redirectToRoute('app_auto_index');
@@ -130,23 +130,26 @@ final class AutoController extends AbstractController
     }
 
     #[Route('/auto/{id}', name: 'app_auto_show', requirements: ['id' => '\\d+'], methods: ['GET'])]
-    public function show(Auto $auto, FavoritoRepository $favoritoRepository): Response
+    public function show(Request $request, Auto $auto, FavoritoRepository $favoritoRepository): Response
     {
-        if ($auto->getEstado() !== 'disponible') {
+        if (!$auto->estaDisponible() && !$this->isGranted('ROLE_ADMIN')) {
             $this->addFlash('error', 'El vehículo seleccionado ya no está disponible.');
 
             return $this->redirectToRoute('app_auto_index');
         }
 
         $usuario = $this->usuarioActual();
-        $esFavorito = $usuario !== null && $favoritoRepository->findOneBy([
-            'usuario' => $usuario,
-            'auto' => $auto,
-        ]) !== null;
+        $esFavorito = $usuario !== null
+            && !$this->isGranted('ROLE_ADMIN')
+            && $favoritoRepository->findOneBy([
+                'usuario' => $usuario,
+                'auto' => $auto,
+            ]) !== null;
 
         return $this->render('auto/show.html.twig', [
             'auto' => $auto,
             'esFavorito' => $esFavorito,
+            'enComparador' => in_array((int) $auto->getId(), $this->idsComparador($request), true),
         ]);
     }
 
@@ -165,38 +168,52 @@ final class AutoController extends AbstractController
         if ($usuario === null) {
             $this->addFlash('error', 'Debés iniciar sesión para guardar favoritos.');
 
-            return $this->redirect($request->getBasePath().'/login?redirect='.urlencode($this->generateUrl('app_auto_show', ['id' => $auto->getId()])));
+            return $this->redirect($this->generateUrl('app_login').'?redirect='.urlencode($this->generateUrl('app_auto_show', ['id' => $auto->getId()])));
         }
 
-        if ($auto->getEstado() !== 'disponible') {
-            $this->addFlash('error', 'El vehículo seleccionado ya no está disponible.');
+        if ($this->isGranted('ROLE_ADMIN')) {
+            $this->addFlash('error', 'Los administradores no gestionan favoritos.');
 
-            return $this->redirectToRoute('app_auto_index');
+            return $this->redirectToRoute('app_auto_show', ['id' => $auto->getId()]);
         }
 
         $favorito = $favoritoRepository->findOneBy(['usuario' => $usuario, 'auto' => $auto]);
         if ($favorito instanceof Favorito) {
             $entityManager->remove($favorito);
-            $mensaje = 'Vehículo quitado de favoritos.';
-        } else {
-            $favorito = (new Favorito())->setUsuario($usuario)->setAuto($auto);
-            $entityManager->persist($favorito);
-            $mensaje = 'Vehículo agregado a favoritos.';
+            $entityManager->flush();
+            $this->addFlash('success', 'Vehículo quitado de favoritos.');
+
+            return $auto->estaDisponible()
+                ? $this->redirectToRoute('app_auto_show', ['id' => $auto->getId()])
+                : $this->redirectToRoute('app_favorite_index');
         }
+
+        if (!$auto->estaDisponible()) {
+            $this->addFlash('error', 'El vehículo seleccionado ya no está disponible.');
+
+            return $this->redirectToRoute('app_auto_index');
+        }
+
+        $favorito = (new Favorito())->setUsuario($usuario)->setAuto($auto);
+        $entityManager->persist($favorito);
         $entityManager->flush();
-        $this->addFlash('success', $mensaje);
+        $this->addFlash('success', 'Vehículo agregado a favoritos.');
 
         return $this->redirectToRoute('app_auto_show', ['id' => $auto->getId()]);
     }
 
     #[Route('/favoritos', name: 'app_favorite_index', methods: ['GET'])]
-    public function favoritos(Request $request, FavoritoRepository $favoritoRepository): Response
+    public function favoritos(FavoritoRepository $favoritoRepository): Response
     {
         $usuario = $this->usuarioActual();
         if ($usuario === null) {
             $this->addFlash('error', 'Debés iniciar sesión para ver tus favoritos.');
 
-            return $this->redirect($request->getBasePath().'/login?redirect='.urlencode($this->generateUrl('app_favorite_index')));
+            return $this->redirect($this->generateUrl('app_login').'?redirect='.urlencode($this->generateUrl('app_favorite_index')));
+        }
+
+        if ($this->isGranted('ROLE_ADMIN')) {
+            return $this->redirectToRoute('app_auto_index');
         }
 
         return $this->render('auto/favorites.html.twig', [

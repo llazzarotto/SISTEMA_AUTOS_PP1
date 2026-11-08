@@ -3,7 +3,7 @@
 {% block title %}Simulador de Financiación | Luxury Cars{% endblock %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ app.request.basePath }}/assets/css/calculadora.css">
+    <link rel="stylesheet" href="{{ asset('assets/css/calculadora.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -33,7 +33,7 @@
 
         <div class="vehiculo-info">
             <p>Vehículo seleccionado: <strong>{{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }}</strong></p>
-            <p>Precio Total: $<strong id="precio-vehiculo" data-id="{{ auto.id }}" data-precio="{{ auto.precio }}">{{ auto.precio|number_format(2, ',', '.') }}</strong></p>
+            <p>Precio Total: $<strong id="precio-vehiculo" data-id="{{ auto.id }}" data-precio="{{ auto.precio }}" data-url-resultado="{{ path('app_financiamiento_resultado', {id: auto.id}) }}">{{ auto.precio|number_format(2, ',', '.') }}</strong></p>
         </div>
 
         <form id="form-financiamiento" class="form-financiamiento">
@@ -69,7 +69,9 @@
             
             <div class="acciones-post-calculo">
                 <button type="button" id="btn-modificar" class="btn btn-secondary">Modificar Simulación</button>
-                <button type="button" id="btn-consultar-chat" class="btn btn-success">Consultar por esta financiación</button>
+                {% if not is_granted('ROLE_ADMIN') %}
+                    <button type="button" id="btn-consultar-chat" class="btn btn-success">Consultar por esta financiación</button>
+                {% endif %}
             </div>
         </div>
     {% endif %}
@@ -104,8 +106,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Constantes para el estado o configuración
     const SIMULACION_EXITOSA = 'EXITO';
-    const RUTA_BASE_CHAT = '{{ app.request.basePath }}/chat';
-    const RUTA_RESULTADO = `{{ app.request.basePath }}/financiamiento/${idAuto}/resultado`;
+    const RUTA_BASE_CHAT = '{{ path('app_chat') }}';
+    const RUTA_RESULTADO = dataAuto.dataset.urlResultado;
 
     let simulacionActualId = null;
     let ultimoCapitalFinanciar = 0;
@@ -165,13 +167,6 @@ document.addEventListener('DOMContentLoaded', function() {
         ultimoValorCuota = valorCuotaEstimado;
         ultimaCantidadCuotas = parseInt(cantidadCuotas, 10);
 
-        // Actualizar UI
-        document.getElementById('res-capital').textContent = capitalAFinanciar.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        document.getElementById('res-cuota').textContent = valorCuotaEstimado.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        
-        formFinanciamiento.classList.add('hidden');
-        panelResultado.classList.remove('hidden');
-
         simulacionActualId = generarIdSimulado();
 
         try {
@@ -191,11 +186,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 const datos = await respuesta.json();
                 if (datos.estado === SIMULACION_EXITOSA && datos.simulacionId) {
                     simulacionActualId = datos.simulacionId;
+                    if (datos.simulacion) {
+                        ultimoCapitalFinanciar = datos.simulacion.capitalFinanciar;
+                        ultimoValorCuota = datos.simulacion.valorCuota;
+                    }
                 }
             }
         } catch (e) {
             // Se conserva el ID generado localmente y los parámetros de consulta
         }
+
+        // Actualizar UI
+        document.getElementById('res-capital').textContent = ultimoCapitalFinanciar.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        document.getElementById('res-cuota').textContent = ultimoValorCuota.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        
+        formFinanciamiento.classList.add('hidden');
+        panelResultado.classList.remove('hidden');
     }
 
     function iniciarConsultaChat() {
@@ -225,8 +231,10 @@ document.addEventListener('DOMContentLoaded', function() {
         formFinanciamiento.classList.remove('hidden');
     });
 
-    document.getElementById('btn-consultar-chat').addEventListener('click', iniciarConsultaChat);
+    const btnConsultarChat = document.getElementById('btn-consultar-chat');
+    if (btnConsultarChat) {
+        btnConsultarChat.addEventListener('click', iniciarConsultaChat);
+    }
 });
 </script>
 {% endblock %}
-

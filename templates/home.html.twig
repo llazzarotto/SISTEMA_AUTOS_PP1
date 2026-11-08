@@ -1,7 +1,6 @@
-
 {% extends "base.html.twig" %}
 
-{% block title %}Inicio | AutoMarket{% endblock %}
+{% block title %}Inicio | Luxury Cars{% endblock %}
 
 {% block description %}
 Explorá vehículos, compará opciones y encontrá tu próximo auto.
@@ -30,15 +29,23 @@ Explorá vehículos, compará opciones y encontrá tu próximo auto.
                     Explorar vehículos
                 </a>
 
-                <a href="{{ app.request.basePath }}/contacto" class="btn btn-outline">
-                    Contactanos
-                </a>
+                {% if not is_granted('ROLE_ADMIN') %}
+                    <a href="{{ path('app_contacto') }}" class="btn btn-outline">
+                        Contactanos
+                    </a>
+                {% endif %}
             </div>
         </div>
 
         <div class="hero-card">
             <span class="hero-card-label">Luxury Cars</span>
-            <div class="hero-card-symbol">LC</div>
+            <div class="hero-card-symbol">
+                <img src="{{ asset('assets/img/logo-home.png') }}"
+                     alt="Luxury Cars"
+                     class="hero-logo-img"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='inline';">
+                <span class="hero-logo-fallback" style="display: none;">LC</span>
+            </div>
             <p>Tu próximo destino está más cerca.</p>
         </div>
 

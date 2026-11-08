@@ -1,9 +1,9 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Atención al Cliente | Luxury Cars{% endblock %}
+{% block title %}{{ is_granted('ROLE_ADMIN') ? 'Contestar mensajes' : 'Atención al Cliente' }} | Luxury Cars{% endblock %}
 
 {% block styles %}
-    <link rel="stylesheet" href="{{ app.request.basePath }}/assets/css/chat.css">
+    <link rel="stylesheet" href="{{ asset('assets/css/chat.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -16,6 +16,70 @@
             Para iniciar una sesión de chat, debe ingresar al sistema.
             <a href="{{ path('app_login', {redirect: app.request.requestUri}) }}" class="btn btn-sm btn-primary">Ir a Autenticarse</a>
         </div>
+    {% elseif is_granted('ROLE_ADMIN') %}
+        <div class="chat-header">
+            <div class="chat-title">
+                <h2>Contestar mensajes de clientes</h2>
+                <span class="status online">Panel de Administración</span>
+            </div>
+            <div class="chat-user-info">
+                <span>Administrador: <strong>{{ usuario.nombre ?: usuario.email }}</strong></span>
+            </div>
+        </div>
+
+        {% if consultasAdmin is empty %}
+            <div class="empty-state">
+                <p>No hay mensajes ni consultas de clientes registradas por el momento.</p>
+            </div>
+        {% else %}
+            <div class="admin-messages-list">
+                {% for item in consultasAdmin %}
+                    {% set partes = item.mensaje|split('\n[ADMIN]: ') %}
+                    {% set mensajeInicial = partes|first %}
+                    <article class="chat-context" style="margin-bottom: 1.25rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                            <strong>
+                                Cliente: {{ item.usuario.nombre ?: item.usuario.email }} ({{ item.usuario.email }})
+                            </strong>
+                            <span class="status {{ item.estado == 'respondida' ? 'online' : 'offline' }}">
+                                {{ item.estado|capitalize }} · {{ item.fechaCreacion|date('d/m/Y H:i') }}
+                            </span>
+                        </div>
+
+                        {% if item.auto %}
+                            <p style="margin: 0.5rem 0;">
+                                Vehículo consultado:
+                                <a href="{{ path('app_auto_show', {id: item.auto.id}) }}">
+                                    <strong>{{ item.auto.modelo.marca.nombre }} {{ item.auto.modelo.nombre }} ({{ item.auto.anio }})</strong>
+                                </a>
+                                - ${{ item.auto.precio|number_format(0, ',', '.') }}
+                            </p>
+                        {% else %}
+                            <p style="margin: 0.5rem 0;"><em>Consulta general (sin vehículo asociado)</em></p>
+                        {% endif %}
+
+                        <div class="chat-messages" style="max-height: none; margin: 0.75rem 0;">
+                            <div class="message message-cliente">
+                                {{ mensajeInicial }}
+                            </div>
+                            {% if partes|length > 1 %}
+                                {% for respuestaPrevia in partes|slice(1) %}
+                                    <div class="message message-asesor">
+                                        {{ respuestaPrevia }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <form method="post" action="{{ path('app_chat_responder', {id: item.id}) }}" class="chat-input-area">
+                            <input type="hidden" name="_token" value="{{ csrf_token('responder_consulta_' ~ item.id) }}">
+                            <input type="text" name="respuesta" class="form-control" placeholder="Escribir respuesta para {{ item.usuario.nombre ?: item.usuario.email }}..." required autocomplete="off">
+                            <button type="submit" class="btn btn-primary">Responder</button>
+                        </form>
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
     {% else %}
         <div class="chat-header">
             <div class="chat-title">
@@ -173,4 +237,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-

@@ -6,7 +6,6 @@ use App\Entity\Auto;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
-use SortDirection;
 
 /**
  * @extends ServiceEntityRepository<Auto>
@@ -39,8 +38,8 @@ class AutoRepository extends ServiceEntityRepository
             ->innerJoin('a.modelo', 'modelo')
             ->innerJoin('modelo.marca', 'marca')
             ->leftJoin('a.imagenes', 'imagenes')
-            ->andWhere('a.estado = :estadoDisponible')
-            ->setParameter('estadoDisponible', 'disponible')
+            ->andWhere('LOWER(a.estado) = :estadoDisponible')
+            ->setParameter('estadoDisponible', Auto::ESTADO_DISPONIBLE)
             ->distinct();
 
         $busqueda = trim((string) ($filtros['q'] ?? ''));
@@ -72,11 +71,11 @@ class AutoRepository extends ServiceEntityRepository
         }
 
         match ($filtros['orden'] ?? 'recientes') {
-            'precio_asc' => $qb->orderBy('a.precio', SortDirection::Ascending),
-            'precio_desc' => $qb->orderBy('a.precio', SortDirection::Descending),
-            'anio_asc' => $qb->orderBy('a.anio', SortDirection::Ascending),
-            'km_asc' => $qb->orderBy('a.kilometraje', SortDirection::Ascending),
-            default => $qb->orderBy('a.anio', SortDirection::Descending)->addOrderBy('a.id', SortDirection::Descending),
+            'precio_asc' => $qb->orderBy('a.precio', 'ASC'),
+            'precio_desc' => $qb->orderBy('a.precio', 'DESC'),
+            'anio_asc' => $qb->orderBy('a.anio', 'ASC'),
+            'km_asc' => $qb->orderBy('a.kilometraje', 'ASC'),
+            default => $qb->orderBy('a.anio', 'DESC')->addOrderBy('a.id', 'DESC'),
         };
 
         $pagina = max(1, $pagina);
@@ -88,8 +87,9 @@ class AutoRepository extends ServiceEntityRepository
         return new Paginator($query, true);
     }
 
-    /** @param list<int> $ids
-     *  @return list<Auto>
+    /**
+     * @param list<int> $ids
+     * @return list<Auto>
      */
     public function buscarDisponiblesPorIds(array $ids): array
     {
@@ -105,7 +105,7 @@ class AutoRepository extends ServiceEntityRepository
             ->andWhere('a.id IN (:ids)')
             ->andWhere('a.estado = :estadoDisponible')
             ->setParameter('ids', $ids)
-            ->setParameter('estadoDisponible', 'disponible')
+            ->setParameter('estadoDisponible', Auto::ESTADO_DISPONIBLE)
             ->distinct()
             ->getQuery()
             ->getResult();
@@ -119,6 +119,55 @@ class AutoRepository extends ServiceEntityRepository
             static fn (int $id): ?Auto => $porId[$id] ?? null,
             $ids
         )));
+    }
+
+    /**
+     * @return list<Auto>
+     */
+    public function obtenerDisponiblesConModeloYMarca(string $ordenId = 'ASC'): array
+    {
+        return $this->createQueryBuilder('a')
+            ->addSelect('modelo', 'marca')
+            ->innerJoin('a.modelo', 'modelo')
+            ->innerJoin('modelo.marca', 'marca')
+            ->where('LOWER(a.estado) = :estado')
+            ->setParameter('estado', Auto::ESTADO_DISPONIBLE)
+            ->orderBy('a.id', $ordenId === 'DESC' ? 'DESC' : 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
+     * Busca todos los autos del inventario.
+     * Permite filtrar por texto y estado.
+     *
+     * @return list<Auto>
+     */
+    public function buscarInventario(?string $busqueda = null, ?string $estado = null): array
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->addSelect('modelo', 'marca')
+            ->innerJoin('a.modelo', 'modelo')
+            ->innerJoin('modelo.marca', 'marca')
+            ->orderBy('a.id', 'DESC');
+
+        if ($busqueda !== null && trim($busqueda) !== '') {
+            $qb->andWhere(
+                'LOWER(marca.nombre) LIKE :busqueda
+                OR LOWER(modelo.nombre) LIKE :busqueda'
+            )
+            ->setParameter(
+                'busqueda',
+                '%' . mb_strtolower(trim($busqueda)) . '%'
+            );
+        }
+
+        if ($estado !== null && $estado !== '') {
+            $qb->andWhere('LOWER(a.estado) = :estado')
+                ->setParameter('estado', strtolower(trim($estado)));
+        }
+
+        return $qb->getQuery()->getResult();
     }
 
     private function aplicarMinimo(

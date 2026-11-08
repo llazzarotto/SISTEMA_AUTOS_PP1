@@ -3,7 +3,7 @@
 <article class="vehicle-card">
     <a class="vehicle-image" href="{{ path('app_auto_show', {id: auto.id}) }}" aria-label="Ver {{ auto.modelo.marca.nombre }} {{ auto.modelo.nombre }}">
         {{ autoImagen.principal(auto, '', 'vehicle-placeholder', app.request.basePath) }}
-        <span class="availability-badge">Disponible</span>
+        <span class="availability-badge">{{ auto.estado|capitalize }}</span>
     </a>
     <div class="vehicle-card-body">
         <p class="vehicle-brand">{{ auto.modelo.marca.nombre }}</p>

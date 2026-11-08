@@ -23,9 +23,10 @@ final class SecurityManager
 
     public function registrar(string $email, string $password): void
     {
-        $rol = $this->roles->findOneBy(['nombre' => 'Cliente']);
+        $rol = $this->roles->findOneBy(['nombre' => Rol::NOMBRE_CLIENTE])
+            ?? $this->roles->findOneBy(['nombre' => 'ROLE_USER']);
         if ($rol === null) {
-            $rol = (new Rol())->setNombre('Cliente');
+            $rol = (new Rol())->setNombre(Rol::NOMBRE_CLIENTE);
             $this->entityManager->persist($rol);
         }
 
